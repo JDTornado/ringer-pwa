@@ -43,6 +43,59 @@ export function inningPhase(slot: Slot | number, rules: Rules = DEFAULT_RULES): 
   return inning === rules.shoeLimitInnings ? 'final' : 'extra';
 }
 
+/** Innings with at least one recorded frame (the highest inning number). */
+export function inningsPlayed(frames: readonly Frame[]): number {
+  return frames.reduce((max, f) => Math.max(max, f.inning), 0);
+}
+
+export type ProgressDot = 'done' | 'current' | 'todo';
+
+export interface InningProgress {
+  /** "Inning N of <limit>": the inning being played, capped at the limit. */
+  inning: number;
+  limit: number;
+  /** One dot per regulation inning. */
+  dots: ProgressDot[];
+}
+
+/**
+ * The regulation-innings progress strip. While playing, innings before the
+ * next slot's are done and the next slot's inning is current. Once the game
+ * is over, every inning played is done and nothing is current.
+ */
+export function inningProgress(frames: readonly Frame[], rules: Rules = DEFAULT_RULES): InningProgress {
+  const limit = rules.shoeLimitInnings;
+  const over = gameStatus(frames, rules).over;
+  const played = inningsPlayed(frames);
+  const current = over ? played : nextSlot(frames).inning;
+  const dots = Array.from({ length: limit }, (_, i): ProgressDot => {
+    const inning = i + 1;
+    if (over) return inning <= played ? 'done' : 'todo';
+    if (inning < current) return 'done';
+    return inning === current ? 'current' : 'todo';
+  });
+  return { inning: Math.min(current, limit), limit, dots };
+}
+
+/**
+ * The participants who throw at `end`: side A's and side B's player assigned
+ * to that end. (If a side has a replacement at the same end, the most
+ * recently added participant is the one now throwing.)
+ */
+export function throwersAt(
+  participants: readonly Participant[],
+  end: End,
+): { a: Participant | undefined; b: Participant | undefined } {
+  const at = (side: Side) => participants.filter((p) => p.side === side && p.end === end).at(-1);
+  return { a: at('a'), b: at('b') };
+}
+
+/** Live/dead split for one frame's ringer counts. Dead = the smaller count. */
+export function ringerSplit(ringersA: number, ringersB: number): { liveA: number; liveB: number; dead: number } {
+  const dead = Math.min(ringersA, ringersB);
+  return { liveA: ringersA - dead, liveB: ringersB - dead, dead };
+}
+
 // ---------------------------------------------------------------------------
 // Totals
 // ---------------------------------------------------------------------------

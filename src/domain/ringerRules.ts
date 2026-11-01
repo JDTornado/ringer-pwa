@@ -172,6 +172,41 @@ export function applyRingerTap(draft: FrameDraft, thrower: Side, value: number):
   return { ...draft, ringersA: target[0], ringersB: target[1] };
 }
 
+/**
+ * Turn a complete draft into a frame for `slot`, thrown by the two given
+ * participant ids. Returns null if the draft isn't complete (see
+ * isDraftComplete), so an invalid verdict can't be recorded.
+ */
+export function draftToFrame(
+  draft: FrameDraft,
+  slot: { inning: number; end: Frame['end'] },
+  throwers: { throwerA: string; throwerB: string },
+  id: string,
+): Frame | null {
+  if (!isDraftComplete(draft)) return null;
+  return {
+    id,
+    inning: slot.inning,
+    end: slot.end,
+    throwerA: throwers.throwerA,
+    throwerB: throwers.throwerB,
+    scoringSide: draft.scoringSide,
+    points: draft.scoringSide === null ? 0 : (draft.points ?? 0),
+    ringersA: draft.ringersA,
+    ringersB: draft.ringersB,
+  };
+}
+
+/** The draft that reproduces a recorded frame (to edit it). */
+export function draftFromFrame(frame: Frame): FrameDraft {
+  return {
+    scoringSide: frame.scoringSide,
+    points: frame.scoringSide === null ? 0 : frame.points,
+    ringersA: frame.ringersA,
+    ringersB: frame.ringersB,
+  };
+}
+
 /** True when the draft is a complete, valid verdict that can be confirmed. */
 export function isDraftComplete(draft: FrameDraft): boolean {
   if (draft.scoringSide !== null && draft.points === null) return false;

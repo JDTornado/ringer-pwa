@@ -35,6 +35,9 @@
   --extra-innings-border: #b6362c;
   --extra-innings-band: linear-gradient(90deg, #c9382d, #7a1610);
 
+  /* ---- Destructive actions (Abandon game): the extra-innings red ---- */
+  --danger: #b6362c;
+
   /* ---- Ringer indicators ---- */
   --ringer-live: #d9b04c;     /* gold: live ringer icon */
   --ringer-dead: #9a9a9a;     /* grey: dead ringer icon on team panels */

@@ -149,6 +149,8 @@ npm test             # vitest (src/**/*.test.ts)
 npm run test:e2e     # playwright, Chromium + WebKit at 390x844; builds and serves
                      #   the production bundle itself (port 4173), so SW is real
 npm run icons        # regenerate public/ icons from scripts/gen-icons.mjs
+node scripts/capture-3b.mjs  # after a build: prototype vs app screenshots into
+                     #   review/3b/ (gitignored; needs network for the prototype)
 npm run db:start     # local Supabase (Docker Desktop must be running)
 npm run db:reset     # rebuild local DB from migrations + seed.sql
 npm run db:test      # pgTAP tests in supabase/tests/

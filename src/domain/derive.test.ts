@@ -3,6 +3,10 @@ import {
   checkEdit,
   currentTotals,
   gameStatus,
+  inningProgress,
+  inningsPlayed,
+  ringerSplit,
+  throwersAt,
   inningPhase,
   nextSlot,
   playerStats,
@@ -235,5 +239,49 @@ describe('checkEdit', () => {
     expect(checkEdit(frames, 0, { ...at(0), points: 5 })).toMatchObject({ ok: false, reason: 'invalid-frame' });
     expect(checkEdit(frames, 0, { ...at(0), inning: 2 })).toMatchObject({ ok: false, reason: 'slot-changed' });
     expect(checkEdit(frames, 99, at(0))).toMatchObject({ ok: false, reason: 'no-such-frame' });
+  });
+});
+
+describe('screen helpers', () => {
+  it('inningsPlayed is the highest inning recorded', () => {
+    expect(inningsPlayed([])).toBe(0);
+    expect(inningsPlayed(framesFrom(SEED_ROWS))).toBe(9);
+    expect(inningsPlayed(framesFrom([NONE, NONE, NONE]))).toBe(2);
+  });
+
+  it('inningProgress while playing: earlier innings done, next slot current', () => {
+    const p = inningProgress(framesFrom([NONE, NONE, NONE])); // next: 2 north
+    expect(p.inning).toBe(2);
+    expect(p.limit).toBe(15);
+    expect(p.dots.slice(0, 3)).toEqual(['done', 'current', 'todo']);
+    expect(p.dots).toHaveLength(15);
+    expect(inningProgress([]).dots[0]).toBe('current');
+  });
+
+  it('inningProgress after the game: innings played done, none current', () => {
+    const p = inningProgress(framesFrom(SEED_ROWS));
+    expect(p.inning).toBe(9);
+    expect(p.dots.filter((d) => d === 'done')).toHaveLength(9);
+    expect(p.dots).not.toContain('current');
+  });
+
+  it('inningProgress caps the label at the limit in extra innings', () => {
+    const tied = framesFrom([...repeat(28, NONE), A1, B1, NONE]); // next: 16 north
+    const p = inningProgress(tied);
+    expect(p.inning).toBe(15);
+    expect(p.dots.every((d) => d === 'done')).toBe(true);
+  });
+
+  it('throwersAt picks each side\'s player at that end (latest if replaced)', () => {
+    expect(throwersAt(PARTICIPANTS, 'south')).toMatchObject({ a: { name: 'Alice' }, b: { name: 'Gus' } });
+    expect(throwersAt(PARTICIPANTS, 'north')).toMatchObject({ a: { name: 'Rick' }, b: { name: 'Bob' } });
+    const withSub: Participant[] = [...PARTICIPANTS, { id: 'sub', name: 'Sub', side: 'a', end: 'north' }];
+    expect(throwersAt(withSub, 'north').a?.name).toBe('Sub');
+  });
+
+  it('ringerSplit: dead is the smaller count, live the remainder', () => {
+    expect(ringerSplit(2, 1)).toEqual({ liveA: 1, liveB: 0, dead: 1 });
+    expect(ringerSplit(0, 2)).toEqual({ liveA: 0, liveB: 2, dead: 0 });
+    expect(ringerSplit(2, 2)).toEqual({ liveA: 0, liveB: 0, dead: 2 });
   });
 });

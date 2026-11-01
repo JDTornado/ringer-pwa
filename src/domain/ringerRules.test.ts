@@ -5,6 +5,8 @@ import {
   applyRingerTap,
   applySide,
   defaultConfig,
+  draftFromFrame,
+  draftToFrame,
   isDraftComplete,
   optionStates,
   validateFrame,
@@ -227,5 +229,34 @@ describe('optionStates', () => {
     expect(states(scored(6))).toBe('A:2 B:0');
     expect(states(scored(6, 'b'))).toBe('A:0 B:2');
     expect(states(applySide('a'))).toBe('A:012 B:012');
+  });
+});
+
+describe('draftToFrame / draftFromFrame', () => {
+  const slot = { inning: 3, end: 'north' as const };
+  const throwers = { throwerA: 'pa', throwerB: 'pb' };
+
+  it('builds a frame from a complete draft', () => {
+    const d = applyRingerTap(scored(3, 'b'), 'b', 2); // b scores 3 with 2 vs 1
+    expect(draftToFrame(d, slot, throwers, 'f1')).toEqual({
+      id: 'f1', inning: 3, end: 'north', throwerA: 'pa', throwerB: 'pb',
+      scoringSide: 'b', points: 3, ringersA: 1, ringersB: 2,
+    });
+  });
+
+  it('a No score draft becomes a 0-point frame', () => {
+    const f = draftToFrame(applyRingerTap(applySide(null), 'a', 1), slot, throwers, 'f2');
+    expect(f).toMatchObject({ scoringSide: null, points: 0, ringersA: 1, ringersB: 1 });
+  });
+
+  it('an incomplete draft (points pending) gives null', () => {
+    expect(draftToFrame(applySide('a'), slot, throwers, 'f3')).toBeNull();
+  });
+
+  it('draftFromFrame round-trips', () => {
+    const d = applyRingerTap(scored(3), 'a', 2);
+    const f = draftToFrame(d, slot, throwers, 'f4');
+    expect(f).not.toBeNull();
+    if (f) expect(draftFromFrame(f)).toEqual(d);
   });
 });

@@ -13,17 +13,17 @@ test.describe('app shell', () => {
 
   test('renders the shell with tokens and fonts, no console errors', async ({ page }, testInfo) => {
     await page.goto('/');
-    const heading = page.getByRole('heading', { name: 'Ringer' });
+    const heading = page.getByRole('heading', { name: 'New Game' });
     await expect(heading).toBeVisible();
 
     // Heading font is the self-hosted Barlow Condensed, and it actually loaded.
     await expect(heading).toHaveCSS('font-family', /Barlow Condensed/);
-    expect(await page.evaluate(() => document.fonts.check('700 48px "Barlow Condensed"'))).toBe(true);
+    expect(await page.evaluate(() => document.fonts.check('700 22px "Barlow Condensed"'))).toBe(true);
 
-    // Token swatches resolve to the data-model colors.
-    await expect(page.locator('[data-token="--team-a"]')).toHaveCSS('background-color', 'rgb(5, 57, 97)');
-    await expect(page.locator('[data-token="--team-b"]')).toHaveCSS('background-color', 'rgb(124, 60, 15)');
-    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(242, 242, 243)');
+    // Tokens resolve to the data-model colors (team inputs are bordered in them).
+    await expect(page.getByLabel('Team A name')).toHaveCSS('border-color', 'rgb(5, 57, 97)');
+    await expect(page.getByLabel('Team B name')).toHaveCSS('border-color', 'rgb(124, 60, 15)');
+    await expect(page.locator('.sheet')).toHaveCSS('background-color', 'rgb(242, 242, 243)');
 
     // Fits a 390px phone: no horizontal scroll.
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);

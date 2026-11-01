@@ -1,64 +1,43 @@
 <script lang="ts">
-  // Placeholder shell. Screens (setup | scoring | gameOver) arrive in 3b.
-  const swatches = [
-    { label: 'Team A', token: '--team-a' },
-    { label: 'Team B', token: '--team-b' },
-  ];
+  import { onMount } from 'svelte';
+  import ReviewOverlay from './components/ReviewOverlay.svelte';
+  import GameOver from './screens/GameOver.svelte';
+  import Scoring from './screens/Scoring.svelte';
+  import Setup from './screens/Setup.svelte';
+  import { gameState as gs } from './state/game.svelte';
+
+  // Resume a saved in-progress (or finished) game, if there is one.
+  onMount(() => {
+    void gs.init();
+  });
 </script>
 
-<main>
-  <h1>Ringer</h1>
-  <p class="tagline">Reno Horseshoe League scoring</p>
-  <div class="swatches">
-    {#each swatches as s (s.token)}
-      <div class="swatch" style:background={`var(${s.token})`} data-token={s.token}>
-        {s.label}
-      </div>
-    {/each}
+<main class="page">
+  <div class="sheet" data-screen={gs.loaded ? gs.screen : 'loading'}>
+    {#if gs.loaded}
+      {#if gs.screen === 'setup'}
+        <Setup />
+      {:else if gs.screen === 'scoring'}
+        <Scoring />
+      {:else}
+        <GameOver />
+      {/if}
+    {/if}
   </div>
-</main>
 
-<style>
-  main {
-    min-height: 100dvh;
-    padding: 32px 16px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    background: var(--color-bg);
-  }
-  h1 {
-    font-family: var(--font-heading);
-    font-weight: 700;
-    font-size: 48px;
-    letter-spacing: 0.02em;
-    color: var(--team-a);
-  }
-  .tagline {
-    margin: 0;
-    color: var(--color-neutral-600);
-  }
-  .swatches {
-    display: flex;
-    gap: 12px;
-    width: 100%;
-    max-width: 358px;
-    margin-top: 12px;
-  }
-  .swatch {
-    flex: 1;
-    min-height: 88px;
-    border-radius: var(--radius-lg);
-    display: flex;
-    align-items: flex-end;
-    padding: 12px;
-    color: var(--on-team);
-    font-family: var(--font-heading);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.09em;
-    font-size: 13px;
-    box-shadow: var(--shadow-sm);
-  }
-</style>
+  {#if gs.reviewOpen && gs.game}
+    <ReviewOverlay
+      teamAName={gs.game.teamAName}
+      teamBName={gs.game.teamBName}
+      totalA={gs.totals.a}
+      totalB={gs.totals.b}
+      rows={gs.review}
+      confirmingAbandon={gs.confirmingAbandon}
+      onClose={() => gs.closeReview()}
+      onEdit={(id) => gs.startEdit(id)}
+      onAskAbandon={() => (gs.confirmingAbandon = true)}
+      onCancelAbandon={() => (gs.confirmingAbandon = false)}
+      onAbandon={() => gs.abandon()}
+    />
+  {/if}
+</main>
