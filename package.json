@@ -1,0 +1,30 @@
+{
+  "name": "ringer-pwa",
+  "version": "1.0.0",
+  "description": "A horseshoe scoring app for the Reno Horseshoe League",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "db:start": "supabase start",
+    "db:reset": "supabase db reset",
+    "db:test": "supabase test db",
+    "db:types": "supabase gen types typescript --local > src/lib/database.types.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JDTornado/ringer-pwa.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/JDTornado/ringer-pwa/issues"
+  },
+  "homepage": "https://github.com/JDTornado/ringer-pwa#readme",
+  "private": true,
+  "devDependencies": {
+    "supabase": "^2.122.0"
+  }
+}

@@ -144,6 +144,7 @@ Each member:
 | `playerId` | ref | |
 | `capacity` | enum | `roster` / `rover` / `subPool` / `guest` |
 | `homeTeamId` | ref? | For rovers: the team they normally play for |
+| `end` | enum | `north` / `south`: the end the captain assigned. One member per end, so at most 2 per pairing |
 
 `capacity` is the field that lets you answer the sub-attribution question later,
 whatever the league decides. Omitting it means backfilling every historical game.

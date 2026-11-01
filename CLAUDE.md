@@ -23,7 +23,7 @@ iOS/Safari surprise, a deploy snag — add one dated line to `docs/pilot-notes.m
 |---|---|---|
 | Domain rules | `docs/data-model.md` | Frame model, ringer validation table, win rules, stats math, color tokens. Authoritative for **rules and meaning**. Its field names are conceptual; **storage shape** lives in the migrations. |
 | Schema workflow | `docs/database.md` | Migrations, local Supabase, approval gate. Follow it exactly. |
-| Schema | `supabase/migrations/` | `docs/horseshoe-schema.sql` is a draft and **not approved** until it becomes the first migration. |
+| Schema | `supabase/migrations/` | Starts with `*_initial_schema.sql`. Constraints are tested in `supabase/tests/` (pgTAP). Not on the hosted project until Josh approves a push. |
 | Look and behavior | `docs/design/prototype/New Game Setup.dc.html` | The canonical reference for setup → scoring → game over. Match its **rendered** look and interactions. |
 
 Ignore in the prototype folder:
