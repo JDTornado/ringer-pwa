@@ -385,10 +385,9 @@ in inning 7 when inning 9 was recorded) is a contradiction, not a valid record: 
 app blocks saving it and explains why, rather than silently dropping later frames.
 
 ```
-endCondition: {
+rules: {                     // snapshotted onto every game (games.rules)
   targetPoints: 21,          // first to reach 21+ wins outright
-  shoeLimit: 30,             // per player; backstop, highest score wins at the limit
-  shoeLimitInnings: 15,      // 30 shoes/player ÷ 2 shoes/inning = 15 innings
+  shoeLimitInnings: 15,      // the 30-shoe limit: 30 shoes/player ÷ 2 per inning
   tieAtLimit: 'suddenDeath'  // DEFAULT pending league decision — see Open questions
 }
 ```
