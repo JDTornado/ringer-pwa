@@ -122,7 +122,7 @@ insert into games (
    '00000000-0000-0000-0006-0000000000a1', '00000000-0000-0000-0006-0000000000b1',
    1, 1, 'app', 'frame', 'complete',
    '00000000-0000-0000-0001-0000000000b4', null,
-   '{"endCondition": {"targetPoints": 21, "shoeLimit": 30, "shoeLimitInnings": 15, "tieAtLimit": "suddenDeath"}}',
+   '{"targetPoints": 21, "shoeLimitInnings": 15, "tieAtLimit": "suddenDeath"}',
    null, null, '2026-10-27 18:30-07', '2026-10-27 19:05-07'),
   -- Game 2: kept on paper by Sam, typed in the next day by Linda. Final only.
   ('00000000-0000-0000-0007-000000000002', 'c0000000-0000-4000-8000-000000000002',
@@ -131,7 +131,7 @@ insert into games (
    '00000000-0000-0000-0006-0000000000a2', '00000000-0000-0000-0006-0000000000b2',
    1, 2, 'paper', 'final_only', 'complete',
    '00000000-0000-0000-0001-0000000000b5', '00000000-0000-0000-0001-0000000000a5',
-   '{"endCondition": {"targetPoints": 21, "shoeLimit": 30, "shoeLimitInnings": 15, "tieAtLimit": "suddenDeath"}}',
+   '{"targetPoints": 21, "shoeLimitInnings": 15, "tieAtLimit": "suddenDeath"}',
    18, 21, '2026-10-27 18:30-07', '2026-10-27 19:10-07');
 
 insert into game_scorer_handoffs (game_id, player_id, from_inning, handed_off_at) values

@@ -1,0 +1,19 @@
+// Cloudflare Workers config. This is a STATIC site: Workers Builds runs
+// `npm run build` and uploads dist/ as static assets. There is no Worker
+// script (no "main"), so every request is answered from the assets.
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // Worker name in the Cloudflare dashboard; also the *.workers.dev subdomain.
+  "name": "ringer",
+  // Workers runtime behavior version. Pinned so a runtime change can't alter
+  // the app until we bump this deliberately. Must not be newer than what the
+  // installed wrangler's local runtime supports, or `wrangler dev` fails.
+  "compatibility_date": "2026-10-30",
+  "assets": {
+    // Vite's production build output.
+    "directory": "./dist",
+    // Unknown paths serve index.html with 200, so the app handles routing
+    // (and a reload on any URL still opens the app).
+    "not_found_handling": "single-page-application"
+  }
+}

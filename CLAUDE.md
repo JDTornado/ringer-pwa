@@ -48,7 +48,11 @@ Ignore in the prototype folder:
   calls.
 - **Vitest** for domain logic and **Playwright** for browser verification.
 - npm. Dev machine is Windows; local Supabase needs Docker Desktop.
-- Hosting: free static host (Cloudflare Pages or Netlify), not chosen yet.
+- Hosting: **Cloudflare Workers static assets**, deployed by **Workers Builds**
+  from GitHub (config in `wrangler.jsonc`, headers in `public/_headers`).
+  **Pushing to `main` deploys production**; other branches get preview URLs.
+  So "never push without approval" also means "never deploy without approval".
+  See `docs/deploy.md`. Never run `wrangler login` or a real `wrangler deploy`.
 
 ## Folder structure
 
@@ -149,6 +153,9 @@ npm test             # vitest (src/**/*.test.ts)
 npm run test:e2e     # playwright, Chromium + WebKit at 390x844; builds and serves
                      #   the production bundle itself (port 4173), so SW is real
 npm run icons        # regenerate public/ icons from scripts/gen-icons.mjs
+npm run deploy:dry   # build + `wrangler deploy --dry-run` (no login, uploads nothing)
+npx wrangler dev     # serve dist/ locally the way Cloudflare will (headers, SPA
+                     #   fallback); run `npm run build` first
 node scripts/capture-3b.mjs  # after a build: prototype vs app screenshots into
                      #   review/3b/ (gitignored; needs network for the prototype)
 npm run db:start     # local Supabase (Docker Desktop must be running)

@@ -1,0 +1,24 @@
+# Cloudflare static-assets headers. Vite copies this file into dist/.
+# Rules match by REQUEST path; headers from every matching rule are applied.
+
+# Unlisted for now: keep every page out of search engines.
+/*
+  X-Robots-Tag: noindex
+
+# Always revalidate the app shell and the service worker, so a new deploy is
+# picked up and the service worker can update. "/" is listed separately:
+# the rule for /index.html doesn't match a request for "/".
+/
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
+/sw.js
+  Cache-Control: no-cache
+/registerSW.js
+  Cache-Control: no-cache
+/manifest.webmanifest
+  Cache-Control: no-cache
+
+# Vite puts a content hash in every filename here, so they never change.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
