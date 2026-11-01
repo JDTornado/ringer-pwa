@@ -48,8 +48,9 @@ npx supabase link --project-ref <project-ref>   # prompts for the DB password
    generated file.
 2. **Apply locally.** `npx supabase db reset` rebuilds the local database from all
    migrations (and `supabase/seed.sql` if present). Any SQL error surfaces here.
-3. **Verify.** Run the checks in `docs/data-model.md` that apply (constraints reject
-   invalid frames, generated columns compute, etc.). Regenerate types:
+3. **Verify.** Run `npx supabase test db` — the checks under *Schema checks* below,
+   written as pgTAP tests in `supabase/tests/`. Add tests for anything new the
+   migration enforces. Regenerate types:
    `npx supabase gen types typescript --local > src/lib/database.types.ts`.
 4. **Present for approval.** Summarize the migration in plain terms: tables/columns
    added or changed, constraints, RLS state, anything destructive. Wait for Josh.
@@ -60,6 +61,23 @@ npx supabase link --project-ref <project-ref>   # prompts for the DB password
 Destructive changes (dropping or renaming a column/table, changing a type that
 could truncate data) are always called out explicitly in step 4, even if the
 hosted database is empty.
+
+## Schema checks
+
+Each is a test that tries the bad thing against the local database and expects
+it to fail (or the derived value to be right). They encode `docs/data-model.md`;
+if the schema can't satisfy one, that's a spec/schema disagreement — stop and ask.
+
+- A frame's ringer count outside 0–2 is rejected.
+- A no-score frame (no scoring team) must have 0 points; a scoring frame must have
+  1–6 points. **5 points is rejected.**
+- `dead_ringers` equals the smaller of the two throwers' counts.
+- A second frame for the same game, inning, and end is rejected.
+- The scoring team must be one of the game's two teams.
+- A duplicate `client_game_id` is rejected (offline-retry idempotency).
+- A player can't be on two teams in the same season.
+- Every table in `public` has RLS enabled, and with no policies the anon role
+  can't read or write any of them.
 
 ## Supabase MCP server (optional, read-only)
 

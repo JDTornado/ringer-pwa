@@ -70,9 +70,14 @@ the *implementation* of it. When they disagree, stop and reconcile.
 
 ---
 
-## Collections
+## Entities
 
-### `players/{playerId}`
+What each entity means and which facts it must hold. Field names here are
+conceptual (camelCase); the actual tables and columns (snake_case) are defined in
+`supabase/migrations/`. If a column and the meaning described here disagree, stop
+and reconcile.
+
+### Players
 Global. Not scoped to a team or a season.
 
 | Field | Type | Notes |
@@ -86,7 +91,7 @@ Global. Not scoped to a team or a season.
 A guest can be created with nothing but a name, mid-game, with no connectivity.
 Design the merge path now even if you build the merge UI later.
 
-### `teams/{teamId}`
+### Teams
 
 | Field | Type | Notes |
 |---|---|---|
@@ -94,7 +99,7 @@ Design the merge path now even if you build the merge UI later.
 | `name` | string | |
 | `captainPlayerId` | ref | |
 
-### `teamMemberships/{membershipId}`
+### Team memberships
 The 8-person roster lives here, not on the player or the team.
 
 | Field | Type | Notes |
@@ -104,7 +109,7 @@ The 8-person roster lives here, not on the player or the team.
 | `playerId` | ref | |
 | `active` | bool | Allows mid-season roster changes without losing history |
 
-### `matchNights/{nightId}`
+### Match nights
 
 | Field | Type | Notes |
 |---|---|---|
@@ -113,7 +118,7 @@ The 8-person roster lives here, not on the player or the team.
 | `venue` | string | |
 | `status` | enum | `scheduled` / `inProgress` / `complete` |
 
-### `teamMatches/{teamMatchId}`
+### Team matches
 
 | Field | Type | Notes |
 |---|---|---|
@@ -122,7 +127,7 @@ The 8-person roster lives here, not on the player or the team.
 | `teamAId`, `teamBId` | ref | |
 | `status` | enum | |
 
-### `pairings/{pairingId}`
+### Pairings
 Night-scoped. This is a first-class entity, not a join table.
 
 | Field | Type | Notes |
@@ -149,7 +154,7 @@ early and be replaced partway through. Who actually played is snapshotted onto
 each game (see below). Never compute a stat by joining a game to its pairing's
 member list.
 
-### `games/{gameId}`
+### Games
 
 | Field | Type | Notes |
 |---|---|---|
@@ -158,27 +163,27 @@ member list.
 | `round` | int | |
 | `court` | int | |
 | `pairingAId`, `pairingBId` | ref | Links to intent; not the record of who played |
-| `participantsA`, `participantsB` | array[2] | **Snapshot** of who actually played this game — each: playerId + capacity + `end` (`north`/`south`) |
+| `participantsA`, `participantsB` | snapshot rows | **Snapshot** of who actually played this game — each: playerId + capacity + `end` (`north`/`south`) |
 | `source` | enum | `app` / `paper` — how the game was recorded |
 | `detailLevel` | enum | `inning` (full inning-by-inning) / `finalOnly` |
 | `currentScorerPlayerId` | ref? | Who holds the game now. Mutable |
-| `scorerHistory` | array | Append-only: `{playerId, fromInning, at}` per handoff |
+| `scorerHistory` | log | Append-only: `{playerId, fromInning, at}` per handoff |
 | `enteredByPlayerId` | ref? | For paper entry: who typed it in, distinct from who scored it |
 | `playedAt` | timestamp | When the game happened, not when it was entered |
 | `status` | enum | `scheduled` / `inProgress` / `complete` / `voided` |
-| `rules` | map | Snapshot: end condition (see Scoring rules). No scoring engine needed |
-| `frames` | array | The record — one entry per end's throw. Empty for `finalOnly`. See below |
+| `rules` | object (JSON) | Snapshot: end condition (see Scoring rules). No scoring engine needed |
+| `frames` | child rows | The record — one row per end's throw. None for `finalOnly`. See below |
 | `finalScoreA`, `finalScoreB` | int? | Derived (sum of frame points) for app games; entered directly for `finalOnly` paper games |
 | `completedAt` | timestamp? | |
 
-Embed `frames` as an array on the game document rather than as a subcollection:
-a full game is one document read and only ~30 small entries — nowhere near
-Firestore's 1 MiB document limit.
+Frames are stored as their own rows keyed to the game (one per end per inning, ~30
+in a full game), not embedded in the game record.
 
-### Frame entry (embedded in `games.frames`)
+### Frames
 
 A **frame** is one end's throw and one score — the atomic unit. A full inning is two
-frames: south (thrown and scored first), then north. Append them in play order.
+frames: south (thrown and scored first), then north. Play order is inning, then
+south before north.
 
 | Field | Type | Notes |
 |---|---|---|
@@ -211,18 +216,27 @@ Notes:
 - **Display grouping:** the UI thinks in innings (shows "Inning 6", south-then-north)
   even though the store is a flat frame list. Group by `inning` for the review table.
 
-### `standings/{seasonId}` (derived)
-Recomputable from games at any time. Maintain via a Cloud Function on game
-completion, or compute client-side — at league scale either works.
+### Standings (derived)
+Never stored as the primary record — recomputable from games at any time.
+Implement as SQL views over the tables, or compute client-side; at league scale
+either works. Deferred until the league settles the open questions below.
 
 ---
 
 ## Offline behaviour
 
-- The scorekeeper's device creates the game locally with a client-generated UUID.
-- Frames append to local storage; Firestore's offline persistence queues the writes.
-- On reconnect, writes flush. The `clientGameId` prevents duplicate games if a
-  retry fires twice.
+The PWA has no built-in sync layer, so offline is handled explicitly.
+
+- The scorekeeper's device creates the game locally with a client-generated UUID
+  (`clientGameId`).
+- The in-progress game (setup + frames) is saved to IndexedDB after every change,
+  so a refresh, crash, or closed tab loses nothing.
+- Once the backend is wired up (planned, not built): each change is queued in a
+  local outbox and written to Supabase when the network allows. Writes are upserts
+  keyed on `clientGameId` (and game + inning + end for frames), so a retry that
+  fires twice can't create duplicates.
+- The IndexedDB copy is a working draft, not the record. Browsers — Safari
+  especially — can evict it. Once synced, the server is the record.
 - Because there is exactly one writer per game, no conflict resolution is needed.
 - Lineups and pairings must be enterable offline too — captains set them at the
   start of the night, which is exactly when the venue is most congested.
@@ -254,7 +268,7 @@ is active at a time — but the transfer needs care.
 - Handoff writes a new entry to `scorerHistory` and updates `currentScorerPlayerId`.
   The `fromInning` field records which inning the new scorer started at.
 - **The hazard is offline handoff.** If the outgoing device has unsynced innings and
-  the incoming device pulls the game from Firestore, the incoming scorer starts
+  the incoming device pulls the game from the server, the incoming scorer starts
   from a stale record and the two diverge — the one case that reintroduces conflict.
 - v1 rule: **handoff requires the outgoing device to flush first.** If it can't
   reach the network, the app blocks the transfer and tells the user to hand the
@@ -334,8 +348,10 @@ A game is won by:
    a frame, if the scoring team's total ≥ 21, the game is complete.
 2. **Otherwise, highest score at 30 shoes** — if neither team has reached 21 by the
    30-shoe limit, the higher score wins.
-3. **Tie at 30 shoes → sudden death** — play continues inning by inning until a team
-   scores a point; first to score wins.
+3. **Tie at 30 shoes → not yet decided by the league.** The current default is
+   sudden death (play continues inning by inning until a team scores a point;
+   first to score wins), set by `tieAtLimit` in the rules snapshot so a different
+   answer is a setting change, not a rewrite. See Open questions.
 
 The app derives the running total and applies rule 1 automatically. Rules 2–3 fire
 at the 15-inning mark (30 shoes per player). In practice most games end on rule 1
@@ -346,7 +362,7 @@ endCondition: {
   targetPoints: 21,          // first to reach 21+ wins outright
   shoeLimit: 30,             // per player; backstop, highest score wins at the limit
   shoeLimitInnings: 15,      // 30 shoes/player ÷ 2 shoes/inning = 15 innings
-  tieAtLimit: 'suddenDeath'  // play on until someone scores
+  tieAtLimit: 'suddenDeath'  // DEFAULT pending league decision — see Open questions
 }
 ```
 
@@ -388,13 +404,21 @@ build, because the app records whatever the players declare regardless — but a
 are needed before stats and standings can be considered correct.
 
 **Answered:** cancellation with dead ringers (done at the pit, not in the app);
-no leaners; throwers each inning are opponents at one pit; ringers stored live/dead
-split; running total derived, never entered. **Win rule confirmed:** first to 21+,
-else highest at 30 shoes per player (15 innings), else sudden death on a tie.
+no leaners; throwers each inning are opponents at one pit; ringers stored as one
+total count per thrower (0–2) with live/dead derived; running total derived, never
+entered. **Win rule confirmed:** first to 21+, else highest at 30 shoes per player
+(15 innings). What happens on a tie at the limit is still open (below).
 
 Note the cancellation edge cases (two-ringer innings, ringer-plus-close, etc.) are
 **no longer app questions** — the players resolve them and the app just stores the
 result. They're dropped.
+
+**Still open — game rules:**
+
+- Tie at the 30-shoe limit. Testers gave three different answers: (a) allow ties;
+  (b) no ties — sudden death, first to score wins; (c) no ties — complete the
+  inning, then compare. The app defaults to (b) via `tieAtLimit` until the league
+  decides.
 
 **Still open — league administration:**
 
