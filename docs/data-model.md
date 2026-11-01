@@ -334,6 +334,7 @@ player cap everything. Allowed combinations per score:
 
 | Score | Scorer ringers | Opponent ringers | Dead (each) | Reason |
 |---|---|---|---|---|
+| none (0) | 0, 1, or 2 | must equal the other thrower | equal to that count | an unmatched ringer would be live and score ≥3; matched ones all cancel |
 | 1 | 0 or 1 | must equal scorer | 0 or 1 | no live ringer; nothing, or one each (both dead) + a close |
 | 2 | 0 | 0 | 0 | two close shoes; any ringer scores ≥3 |
 | 3 | 1 or 2 | 0 if scorer=1, 1 if scorer=2 | 0 or 1 | exactly one live ringer, no close |
@@ -341,7 +342,7 @@ player cap everything. Allowed combinations per score:
 | 5 | — | — | — | **impossible** with two shoes — the "5" button should not be selectable |
 | 6 | exactly 2 | 0 | 0 | two live ringers |
 
-Defaults: 1 → (0,0); 3 → (1,0); 4 → (1,0); 6 → (2,0).
+Defaults: none → (0,0); 1 → (0,0); 3 → (1,0); 4 → (1,0); 6 → (2,0).
 
 Couplings the UI must enforce (tighter than a simple max):
 - **3:** allowed pairs are exactly (scorer 1, opp 0) or (scorer 2, opp 1). Disallow
@@ -376,6 +377,12 @@ A game is won by:
 The app derives the running total and applies rule 1 automatically. Rules 2–3 fire
 at the 15-inning mark (30 shoes per player). In practice most games end on rule 1
 before the limit matters, but the app still applies the backstop.
+
+**Game state is always derived from the frames**, including whether the game is
+over. So **editing a past frame** can change the outcome. An edit that would make
+the game end *before* the last recorded frame (e.g. a correction gives a side 21
+in inning 7 when inning 9 was recorded) is a contradiction, not a valid record: the
+app blocks saving it and explains why, rather than silently dropping later frames.
 
 ```
 endCondition: {
