@@ -159,25 +159,34 @@ member list.
 | Field | Type | Notes |
 |---|---|---|
 | `clientGameId` | uuid | Generated on device. Makes offline creation idempotent |
-| `teamMatchId` | ref | |
+| `teamMatchId` | ref? | Null for a game outside a league team match |
+| `teamAId`, `teamBId` | ref | Always real team rows (see note below). "Side A"/"side B" everywhere else means these |
 | `round` | int | |
 | `court` | int | |
 | `pairingAId`, `pairingBId` | ref | Links to intent; not the record of who played |
-| `participantsA`, `participantsB` | snapshot rows | **Snapshot** of who actually played this game — each: playerId + capacity + `end` (`north`/`south`) |
+| `participants` | snapshot rows | **Snapshot** of who actually played — each: playerId + `side` (`a`/`b`) + capacity + `homeTeamId` + `end` (`north`/`south`). The team played for is the game's team on that side. A side can have **more than 2** participants when someone leaves early and is replaced; who threw each frame is on the frame |
 | `source` | enum | `app` / `paper` — how the game was recorded |
-| `detailLevel` | enum | `inning` (full inning-by-inning) / `finalOnly` |
+| `detailLevel` | enum | `frame` (full frame-by-frame) / `finalOnly` |
 | `currentScorerPlayerId` | ref? | Who holds the game now. Mutable |
-| `scorerHistory` | log | Append-only: `{playerId, fromInning, at}` per handoff |
+| `scorerHandoffs` | log | Append-only: `{playerId, fromInning, at}` per handoff |
 | `enteredByPlayerId` | ref? | For paper entry: who typed it in, distinct from who scored it |
 | `playedAt` | timestamp | When the game happened, not when it was entered |
 | `status` | enum | `scheduled` / `inProgress` / `complete` / `voided` |
 | `rules` | object (JSON) | Snapshot: end condition (see Scoring rules). No scoring engine needed |
 | `frames` | child rows | The record — one row per end's throw. None for `finalOnly`. See below |
-| `finalScoreA`, `finalScoreB` | int? | Derived (sum of frame points) for app games; entered directly for `finalOnly` paper games |
+| `finalScoreA`, `finalScoreB` | int? | **Only** for `finalOnly` games, where they're entered. For `frame` games they're null and the score is derived (a view sums the frames) |
 | `completedAt` | timestamp? | |
 
 Frames are stored as their own rows keyed to the game (one per end per inning, ~30
 in a full game), not embedded in the game record.
+
+**Every stored game uses real team rows** (decided 2026-11-01). The setup screen's
+free-typed team names are a local-only mode: such games stay on the device and are
+not synced until setup can pick teams from rosters. Free-typed *players* are fine —
+they become guest player records.
+
+All IDs (games, participants, frames) are generated on the device, so a game built
+offline syncs as-is.
 
 ### Frames
 
@@ -191,12 +200,12 @@ south before north.
 | `end` | enum | `south` / `north`. South is always the first frame of an inning |
 | `throwerAId` | ref | Team A's player at this end (defaults from the side assignment; stored so an early-leaver swap doesn't rewrite history) |
 | `throwerBId` | ref | Team B's player at this end |
-| `scoringTeam` | enum? | `A` / `B` / `null`. Null = nobody scored (the dash/zero frame) |
-| `points` | int | 0–6 to the scoring team (max 6 = a double ringer); `0` when `scoringTeam` is null |
+| `scoringSide` | enum? | `a` / `b` / `null`. Null = nobody scored (the dash/zero frame) |
+| `points` | int | 0–6 to the scoring team (max 6 = a double ringer); `0` when `scoringSide` is null |
 | `ringers` | map | Per throwing player → total ringers thrown (0–2). Live/dead is derived, not stored |
 
 Notes:
-- **Only one team scores per frame.** `scoringTeam` + `points` is the whole verdict;
+- **Only one team scores per frame.** `scoringSide` + `points` is the whole verdict;
   the other side is implicitly zero. No per-shoe result, no scoring math in the app.
 - The two throwers in a frame are **opponents** — Team A's and Team B's player at
   that end. They're fixed across the game unless someone leaves early, which is why
@@ -212,7 +221,7 @@ Notes:
   from the score — they stay an explicit input. The score is used only to pre-suggest
   a value and to flag impossible score+ringer combinations.
 - **Running total is derived.** A team's score after any point is the sum of
-  `points` where `scoringTeam` matches, across frames in play order. Never entered.
+  `points` where `scoringSide` matches, across frames in play order. Never entered.
 - **Display grouping:** the UI thinks in innings (shows "Inning 6", south-then-north)
   even though the store is a flat frame list. Group by `inning` for the review table.
 
@@ -265,7 +274,7 @@ Paper coexisting with the app is a permanent condition, not a migration phase.
 A game can change hands mid-play. The model stays single-writer — only one device
 is active at a time — but the transfer needs care.
 
-- Handoff writes a new entry to `scorerHistory` and updates `currentScorerPlayerId`.
+- Handoff writes a new entry to `scorerHandoffs` and updates `currentScorerPlayerId`.
   The `fromInning` field records which inning the new scorer started at.
 - **The hazard is offline handoff.** If the outgoing device has unsynced innings and
   the incoming device pulls the game from the server, the incoming scorer starts
@@ -301,7 +310,7 @@ a point can be cancelled by a later shoe, so no per-shoe tally is meaningful.
 ### Zero-point innings: dash vs "0"
 
 When neither side scores, the paper shows a dash (some players) or a `0` (others).
-This is a **display preference, not data** — store the frame as `scoringTeam:
+This is a **display preference, not data** — store the frame as `scoringSide:
 null, points: 0` and let a setting control whether the UI renders `—` or `0`.
 Default to `—`; make it a one-tap toggle.
 
@@ -340,6 +349,12 @@ Couplings the UI must enforce (tighter than a simple max):
 disabled options) and drive both the UI enable/disable and validation from one pure
 function — not a stack of hand-written conditionals. One source of truth; a rule
 change is a table edit.
+
+**Where it's enforced** (decided 2026-11-01): the app enforces the full table. The
+database enforces only the hard ranges — ringers 0–2, points 0–6, never 5, and
+points 0 exactly when nobody scored. Reason: a paper sheet with an impossible
+combination should be saved and **flagged** (using the same pure function), not
+refused and lost.
 
 A game is won by:
 

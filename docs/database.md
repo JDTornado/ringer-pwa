@@ -73,7 +73,11 @@ if the schema can't satisfy one, that's a spec/schema disagreement — stop and 
   1–6 points. **5 points is rejected.**
 - `dead_ringers` equals the smaller of the two throwers' counts.
 - A second frame for the same game, inning, and end is rejected.
-- The scoring team must be one of the game's two teams.
+- A frame's two throwers are participants in the same game, thrower A on side `a`
+  and thrower B on side `b`.
+- A `frame`-level game has null final scores; a `final_only` game has no
+  frames.
+- Frames sort in play order with a plain `ORDER BY inning, court_end` (south first).
 - A duplicate `client_game_id` is rejected (offline-retry idempotency).
 - A player can't be on two teams in the same season.
 - Every table in `public` has RLS enabled, and with no policies the anon role
