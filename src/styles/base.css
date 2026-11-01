@@ -1,0 +1,57 @@
+/* Base styles: reset, page frame, iOS safety. Colors/fonts come from tokens.css. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  /* dvh, not vh: iOS Safari's vh ignores the collapsing toolbar. */
+  min-height: 100dvh;
+  /* Keep content clear of the notch and home indicator (needs
+     viewport-fit=cover in index.html). */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.4;
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  line-height: 1.12;
+  margin: 0;
+}
+
+/* iOS zooms the page when a focused field's text is under 16px. */
+input,
+select,
+textarea {
+  font: inherit;
+  font-size: max(16px, 1em);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  touch-action: manipulation; /* no double-tap zoom delay */
+}
+
+:focus-visible {
+  outline: 2px solid var(--action);
+  outline-offset: 2px;
+}

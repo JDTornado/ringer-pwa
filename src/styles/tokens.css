@@ -1,0 +1,83 @@
+/*
+ * Ringer design tokens. EVERY color, font, radius, and shadow used by a
+ * component comes from here; components never use raw hex values.
+ *
+ * Sources:
+ *   - Team/action colors: docs/data-model.md, "Design tokens".
+ *   - State colors and in-markup values: the canonical prototype,
+ *     docs/design/prototype/New Game Setup.dc.html.
+ *   - Base variables (bg, text, divider, neutral ramp, accent steps, shadows,
+ *     fonts): COPIED from the prototype's _ds/industry-* /styles.css, only the
+ *     ones the prototype references. That stylesheet is not linked or bundled.
+ */
+
+:root {
+  /* ---- Team and action colors (data-model.md) ---- */
+  --team-a: #053961;          /* deep navy: first team */
+  --team-b: #7c3c0f;          /* rust/maroon: second team */
+  --action: #0867c4;          /* selected points/ringers, main action buttons */
+  --action-alt: #2e7ac8;      /* lighter action blue: Confirm/Next gradient end */
+  --on-team: #fff;            /* text on team panels */
+  --on-action: #fff;          /* text on action-colored buttons */
+
+  /* ---- State: editing a past frame (amber banner in the prototype) ---- */
+  --editing: #e0952b;         /* banner border */
+  --editing-bg: #fdecc8;
+  --editing-text: #7a4e0a;
+
+  /* ---- State: final inning (inning 15) ---- */
+  --final-inning-bg: #fff6e6;
+  --final-inning-border: #d98d1f;
+  --final-inning-band: linear-gradient(90deg, #f2a63d, #d9453a);
+
+  /* ---- State: extra innings (sudden death, inning > 15) ---- */
+  --extra-innings-bg: #fdece9;
+  --extra-innings-border: #b6362c;
+  --extra-innings-band: linear-gradient(90deg, #c9382d, #7a1610);
+
+  /* ---- Ringer indicators ---- */
+  --ringer-live: #d9b04c;     /* gold: live ringer icon */
+  --ringer-dead: #9a9a9a;     /* grey: dead ringer icon on team panels */
+
+  /* ---- Surfaces ---- */
+  --color-card: #fff;         /* cards, inputs, unselected buttons */
+
+  /* ---- Base (copied from the prototype's design-system stylesheet) ---- */
+  --color-bg: #f2f2f3;
+  --color-text: #1d1f20;
+  --color-accent: #5980a6;
+  --color-divider: color-mix(in srgb, #1d1f20 16%, transparent);
+
+  --color-neutral-100: #f5f5f8;
+  --color-neutral-200: #e7e7ea;
+  --color-neutral-300: #d4d4d7;
+  --color-neutral-400: #b7b7ba;
+  --color-neutral-500: #98989b;
+  --color-neutral-600: #7a7a7d;
+  --color-neutral-700: #5d5d60;
+  --color-neutral-800: #424244;
+  --color-neutral-900: #2b2b2d;
+
+  --color-accent-100: #eef6ff;
+  --color-accent-300: #b5d9fd;
+  --color-accent-400: #94bce3;
+  --color-accent-600: #597ea3;
+  --color-accent-700: #416180;
+
+  --shadow-sm: 0 1px 2px color-mix(in srgb, #2b2b2d 14%, transparent);
+  --shadow-md: 0 3px 10px color-mix(in srgb, #2b2b2d 16%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, #2b2b2d 22%, transparent);
+  /* Inline shadows from the prototype's markup */
+  --shadow-inset: inset 0 1px 3px rgba(29, 31, 32, 0.08);
+  --shadow-button: 0 1px 2px rgba(29, 31, 32, 0.14);
+  --shadow-selected: 0 0 0 2px #fff, 0 2px 6px rgba(8, 103, 196, 0.45);
+
+  /* ---- Fonts (self-hosted via @fontsource; imported in main.ts) ---- */
+  --font-heading: "Barlow Condensed", system-ui, sans-serif;
+  --font-body: "Barlow", system-ui, sans-serif;
+
+  /* ---- Radii (as used in the prototype's markup) ---- */
+  --radius-sm: 5px;
+  --radius-md: 9px;
+  --radius-lg: 14px;
+}

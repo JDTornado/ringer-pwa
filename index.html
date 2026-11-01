@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- viewport-fit=cover lets env(safe-area-inset-*) reach the notch/home bar -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Ringer</title>
+    <meta name="description" content="Scorekeeping for the Reno Horseshoe League" />
+    <meta name="theme-color" content="#053961" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <!-- iOS ignores the manifest's icons and install prompt: these tags are
+         what Share > Add to Home Screen uses. -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Ringer" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

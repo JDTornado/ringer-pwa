@@ -144,8 +144,16 @@ docs/
 npm run dev          # local dev server
 npm run build        # production build (includes SW)
 npm run preview      # serve the build — use for PWA/offline testing
-npm run check        # svelte-check + type check
-npm test             # vitest
-npm run test:e2e     # playwright
+npm run check        # svelte-check (src) + tsc -p tsconfig.node.json (configs, e2e)
+npm test             # vitest (src/**/*.test.ts)
+npm run test:e2e     # playwright, Chromium + WebKit at 390x844; builds and serves
+                     #   the production bundle itself (port 4173), so SW is real
+npm run icons        # regenerate public/ icons from scripts/gen-icons.mjs
+npm run db:start     # local Supabase (Docker Desktop must be running)
+npm run db:reset     # rebuild local DB from migrations + seed.sql
+npm run db:test      # pgTAP tests in supabase/tests/
+npm run db:types     # regenerate src/lib/database.types.ts from the local DB
 npx supabase ...     # see docs/database.md
 ```
+
+TypeScript is pinned to 6.x: svelte-check doesn't support TypeScript 7 yet.
