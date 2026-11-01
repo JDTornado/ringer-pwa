@@ -3,7 +3,7 @@
 -- invariants the initial migration adds.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(37);
+select plan(38);
 
 -- ---------- Fixture --------------------------------------------------------
 insert into seasons (id, name) values ('11111111-0000-0000-0000-000000000001', 'S1');
@@ -164,6 +164,11 @@ select throws_like(
 select throws_like(
   $$ update games set final_score_b = null where id = '77777777-0000-0000-0000-000000000003' $$,
   '%"games_final_scores_by_detail_level"%', 'a final_only game has both finals or neither');
+select throws_like(
+  $$ insert into games (client_game_id, team_a_id, team_b_id, detail_level, status, rules) values
+     (gen_random_uuid(), '22222222-0000-0000-0000-00000000000a', '22222222-0000-0000-0000-00000000000b',
+      'final_only', 'complete', '{}') $$,
+  '%"games_complete_final_only_has_scores"%', 'a complete final_only game must have both final scores');
 select throws_like(
   $$ select pg_temp.frame(1, 'south', '88888888-0000-0000-0000-000000000007', '88888888-0000-0000-0000-000000000008', 'a', 1, 0, 0,
                           '77777777-0000-0000-0000-000000000003') $$,

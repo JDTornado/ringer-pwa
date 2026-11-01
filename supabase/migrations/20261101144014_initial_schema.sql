@@ -217,9 +217,15 @@ create table games (
   constraint games_final_scores_by_detail_level check (
     case detail_level
       when 'frame' then final_score_a is null and final_score_b is null
-      -- final_only: both entered, or neither yet (e.g. created before entry).
+      -- final_only: both entered, or neither yet (e.g. created before entry;
+      -- once complete, both are required: see the next constraint).
       else (final_score_a is null) = (final_score_b is null)
     end
+  ),
+  -- A finished paper game must have its result entered.
+  constraint games_complete_final_only_has_scores check (
+    detail_level <> 'final_only' or status <> 'complete'
+    or (final_score_a is not null and final_score_b is not null)
   ),
   -- Target for frames' composite FK (see frames: "a final_only game has no frames").
   unique (id, detail_level)

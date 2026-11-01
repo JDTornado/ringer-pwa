@@ -277,6 +277,10 @@ is active at a time — but the transfer needs care.
 
 - Handoff writes a new entry to `scorerHandoffs` and updates `currentScorerPlayerId`.
   The `fromInning` field records which inning the new scorer started at.
+- **Every scorer assignment is logged**, including the first: when a game starts,
+  its initial scorer gets a `scorerHandoffs` entry with `fromInning: 1`. The log is
+  therefore the complete scoring history, and `currentScorerPlayerId` always matches
+  its latest entry.
 - **The hazard is offline handoff.** If the outgoing device has unsynced innings and
   the incoming device pulls the game from the server, the incoming scorer starts
   from a stale record and the two diverge — the one case that reintroduces conflict.
