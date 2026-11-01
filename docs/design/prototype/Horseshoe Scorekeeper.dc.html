@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/industry-6dd2cb36-31aa-49d6-87fd-39b31506e5d8/styles.css">
+  <script src="_ds/industry-6dd2cb36-31aa-49d6-87fd-39b31506e5d8/_ds_bundle.js"></script>
+  <style>
+    body { margin: 0; background: var(--color-neutral-200); }
+    a, a:hover { color: var(--color-accent); }
+  </style>
+</helmet>
+<div style="min-height: 100vh; display: flex; justify-content: center; padding: 28px 16px; box-sizing: border-box;">
+  <div style="width: 390px; border-radius: 14px;; max-width: 100%; background: var(--color-bg); box-shadow: var(--shadow-lg); padding: 14px; display: flex; flex-direction: column; gap: 8px; position: relative;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="font-family: var(--font-heading); font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent-600);">Horseshoe Scoring</div>
+      <button class="btn btn-secondary" style="border-radius: 9px;" onClick="{{ toggleReview }}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="17" rx="0"></rect><line x1="7" y1="10" x2="17" y2="10"></line><line x1="7" y1="14" x2="17" y2="14"></line><line x1="7" y1="18" x2="13" y2="18"></line></svg>
+        Review
+      </button>
+    </div>
+
+    <!-- Score bar -->
+    <div style="display: flex; overflow: hidden; border-radius: 14px; border: 1px solid var(--color-divider);">
+      <div style="flex: 1; background: {{ teamAColor }}; color: #fff; padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="font-family: var(--font-heading); font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase; opacity: 0.85;">{{ teamAName }}</div>
+        <div style="font-family: var(--font-heading); font-size: 54px; line-height: 1; font-weight: 600; display: inline-block; transform: {{ pulseATransform }}; transition: {{ pulseATransition }}; transform-origin: left center;">{{ totalA }}</div>
+        <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 2px; font-size: 12px;">
+          <div style="display: flex; align-items: center; gap: 5px;">
+            <span style="width: 40px; flex: none; font-family: var(--font-heading); font-weight: 600; opacity: 0.95;">{{ jonasName }}</span>
+            <span style="font-family: var(--font-heading); font-weight: 700; font-size: 14px; width: 14px;">{{ jonasPts }}</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="color: #d9b04c;"><path d="M6 5v7a6 6 0 0 0 12 0V5"></path><circle cx="12" cy="9" r="2.2" fill="currentColor" stroke="none"></circle></svg>
+            <span>{{ jonasLive }}</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="color: #9a9a9a;"><path d="M6 5v7a6 6 0 0 0 12 0V5"></path><path d="M9 6l6 6M15 6l-6 6"></path></svg>
+            <span>{{ jonasDead }}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 5px;">
+            <span style="width: 40px; flex: none; font-family: var(--font-heading); font-weight: 600; opacity: 0.95;">{{ debName }}</span>
+            <span style="font-family: var(--font-heading); font-weight: 700; font-size: 14px; width: 14px;">{{ debPts }}</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="color: #d9b04c;"><path d="M6 5v7a6 6 0 0 0 12 0V5"></path><circle cx="12" cy="9" r="2.2" fill="currentColor" stroke="none"></circle></svg>
+            <span>{{ debLive }}</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="color: #9a9a9a;"><path d="M6 5v7a6 6 0 0 0 12 0V5"></path><path d="M9 6l6 6M15 6l-6 6"></path></svg>
+            <span>{{ debDead }}</span>
+          </div>
+        </div>
+      </div>
+      <div style="flex: 1; background: {{ teamBSolid }}; color: #fff; padding: 14px 14px 12px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+        <div style="font-family: var(--font-heading); font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase; opacity: 0.9;">{{ teamBName }}</div>
+        <div style="font-family: var(--font-heading); font-size: 54px; line-height: 1; font-weight: 600; display: inline-block; transform: {{ pulseBTransform }}; transition: {{ pulseBTransition }}; transform-origin: right center;">{{ totalB }}</div>
+        <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 2px; font-size: 12px; align-items: flex-end;">
+          <div style="display: flex; align-items: center; gap: 5px; flex-direction: row-reverse;">
+            <span style="width: 40px; flex: none; text-align: right; font-family: var(--font-heading); font-weight: 600; opacity: 0.95;">{{ priyaName }}</span>
+            <span style="font-family: var(--font-heading); font-weight: 700; font-size: 14px; width: 14px; text-align: right;">{{ priyaPts }}</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="color: #d9b04c;"><path d="M6 5v7a6 6 0 0 0 12 0V5"></path><circle cx="12" cy="9" r="2.2" fill="currentColor" stroke="none"></circle></svg>
+            <span>{{ priyaLive }}</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="color: #9a9a9a;"><path d="M6 5v7a6 6 0 0 0 12 0V5"></path><path d="M9 6l6 6M15 6l-6 6"></path></svg>
+            <span>{{ priyaDead }}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 5px; flex-direction: row-reverse;">
+            <span style="width: 40px; flex: none; text-align: right; font-family: var(--font-heading); font-weight: 600; opacity: 0.95;">{{ samName }}</span>
+            <span style="font-family: var(--font-heading); font-weight: 700; font-size: 14px; width: 14px; text-align: right;">{{ samPts }}</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="color: #d9b04c;"><path d="M6 5v7a6 6 0 0 0 12 0V5"></path><circle cx="12" cy="9" r="2.2" fill="currentColor" stroke="none"></circle></svg>
+            <span>{{ samLive }}</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="color: #9a9a9a;"><path d="M6 5v7a6 6 0 0 0 12 0V5"></path><path d="M9 6l6 6M15 6l-6 6"></path></svg>
+            <span>{{ samDead }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Now Pitching / Scoring — hidden when game over -->
+    <sc-if value="{{ notGameOver }}" hint-placeholder-val="{{ true }}">
+      <div class="card" style="border-color: {{ npPanelBorder }}; background: {{ npPanelBg }}; border-radius: 14px; flex-direction: column; gap: 3px;">
+        <div style="display: flex; flex-direction: row; align-items: center; justify-content: space-between;">
+          <div>
+            <div class="card-kicker" style="margin-bottom: 0;">Now Pitching</div>
+            <div class="card-title">Inning {{ nextInning }} · {{ nextEnd }}</div>
+          </div>
+          <div style="font-size: 14px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0; opacity: {{ npOpacity }}; transform: {{ npTransform }}; transition: {{ npTransition }};">
+            <span style="color: {{ teamAColor }}; font-weight: 700; line-height: 1.2;">{{ throwerAName }}</span>
+            <span style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; letter-spacing: 0.05em; color: var(--color-neutral-500); font-style: italic; line-height: 1.2;">vs</span>
+            <span style="color: {{ teamBTextColor }}; font-weight: 700; line-height: 1.2;">{{ throwerBName }}</span>
+          </div>
+        </div>
+        <sc-if value="{{ showFinalInningBadge }}" hint-placeholder-val="{{ false }}">
+          <div style="background: {{ bandGradient }}; border-radius: 5px; padding: 2px 0; text-align: center;">
+            <span style="font-family: var(--font-heading); font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #fff;">{{ finalInningLabel }}</span>
+          </div>
+        </sc-if>
+      </div>
+
+      <sc-if value="{{ isEditing }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; align-items: center; justify-content: space-between; background: #fdecc8; border: 2px solid #e0952b; border-radius: 9px; padding: 9px 12px; font-size: 13px; font-weight: 700; color: #7a4e0a;">
+          <span>⚠ Editing Inning {{ nextInning }} · {{ nextEnd }} — not the current turn</span>
+          <button class="btn btn-ghost" style="font-size: 12px; padding: 2px 4px; color: #7a4e0a; font-weight: 700;" onClick="{{ cancelEdit }}">Cancel</button>
+        </div>
+      </sc-if>
+
+      <div style="overflow: hidden; border-radius: 14px;">
+      <div class="card" style="border-radius: 14px; background: #fff; border: 1px solid var(--color-divider); box-shadow: var(--shadow-sm); padding: 10px 10px; gap: 6px; transform: {{ cardTransform }}; opacity: {{ cardOpacity }}; transition: {{ cardTransition }};">
+        <div style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent);">Who scored &amp; how many</div>
+        <div style="display: flex; gap: 8px;">
+          <button style="flex: 1.2; padding: 10px 6px; font-family: var(--font-heading); font-weight: 700; font-size: 14px; border: 2px solid {{ teamAColor }}; border-radius: 9px; cursor: pointer; background: {{ teamASelBg }}; color: {{ teamASelText }}; box-shadow: {{ teamASelShadow }};" onClick="{{ selectTeamA }}">{{ teamAName }}</button>
+          <button style="flex: 1; padding: 10px 6px; font-family: var(--font-heading); font-weight: 600; font-size: 13px; border: 1px solid var(--color-divider); border-radius: 9px; cursor: pointer; background: {{ noneSelBg }}; color: {{ noneSelText }}; box-shadow: {{ noneSelShadow }};" onClick="{{ selectNone }}">No score</button>
+          <button style="flex: 1.2; padding: 10px 6px; font-family: var(--font-heading); font-weight: 700; font-size: 14px; border: 2px solid {{ teamBSolid }}; border-radius: 9px; cursor: pointer; background: {{ teamBSelBg }}; color: {{ teamBSelText }}; box-shadow: {{ teamBSelShadow }};" onClick="{{ selectTeamB }}">{{ teamBName }}</button>
+        </div>
+
+        <div style="background: var(--color-neutral-100); border: 1px solid var(--color-divider); border-radius: 10px; padding: 6px; box-shadow: inset 0 1px 3px rgba(29,31,32,0.08); opacity: {{ pointsOpacity }};">
+          <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px;">
+            <sc-for list="{{ pointOptions }}" as="p" hint-placeholder-count="6">
+              <button disabled="{{ p.pointDisabled }}" style="aspect-ratio: 1; font-family: var(--font-heading); font-weight: 600; font-size: 17px; border: {{ p.border }}; border-radius: 9px; cursor: pointer; background: {{ p.bg }}; color: {{ p.color }}; box-shadow: {{ p.shadow }};" onClick="{{ p.onClick }}">{{ p.value }}</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.6;">Ringers this turn</div>
+
+        <div style="border: 1px solid {{ teamAColor }}; border-left: 5px solid {{ teamAColor }}; background: var(--color-neutral-100); border-radius: 10px; padding: 7px 8px; box-shadow: inset 0 1px 3px rgba(29,31,32,0.08); display: flex; align-items: center; gap: 8px;">
+          <span style="display: flex; align-items: center; gap: 6px; font-family: var(--font-heading); font-weight: 600; font-size: 13px; flex: none; width: 62px;">{{ throwerAName }}</span>
+          <div style="display: flex; gap: 6px; flex: 1;">
+            <sc-for list="{{ ringerAOptions }}" as="r" hint-placeholder-count="3">
+              <button disabled="{{ r.disabled }}" style="flex: 1; padding: 8px 0; font-family: var(--font-heading); font-weight: 600; font-size: 15px; border: {{ r.border }}; border-radius: 9px; cursor: pointer; background: {{ r.bg }}; color: {{ r.color }}; box-shadow: {{ r.shadow }};" onClick="{{ r.onClick }}">{{ r.value }}</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="border: 1px solid {{ teamBSolid }}; border-left: 5px solid {{ teamBSolid }}; background: var(--color-neutral-100); border-radius: 10px; padding: 7px 8px; box-shadow: inset 0 1px 3px rgba(29,31,32,0.08); display: flex; align-items: center; gap: 8px;">
+          <span style="display: flex; align-items: center; gap: 6px; font-family: var(--font-heading); font-weight: 600; font-size: 13px; flex: none; width: 62px;">{{ throwerBName }}</span>
+          <div style="display: flex; gap: 6px; flex: 1;">
+            <sc-for list="{{ ringerBOptions }}" as="r" hint-placeholder-count="3">
+              <button disabled="{{ r.disabled }}" style="flex: 1; padding: 8px 0; font-family: var(--font-heading); font-weight: 600; font-size: 15px; border: {{ r.border }}; border-radius: 9px; cursor: pointer; background: {{ r.bg }}; color: {{ r.color }}; box-shadow: {{ r.shadow }};" onClick="{{ r.onClick }}">{{ r.value }}</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background: var(--color-neutral-100); border: 1px solid var(--color-divider); border-radius: 9px; padding: 6px 8px; display: flex; flex-direction: column; gap: 3px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px;">
+            <span style="display: flex; align-items: center; gap: 6px; font-family: var(--font-heading); font-weight: 600;"><span style="width: 7px; height: 7px; border-radius: 50%; background: {{ teamAColor }}; flex: none;"></span>{{ derivedAName }}</span>
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <span style="display: flex; align-items: center; gap: 4px; opacity: {{ dLiveAOpacity }};">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="color: {{ dLiveAColor }};"><path d="M6 5v7a6 6 0 0 0 12 0V5"></path><circle cx="12" cy="9" r="2.2" fill="currentColor" stroke="none"></circle></svg>
+                <span style="color: {{ dLiveAColor }}; font-weight: {{ dLiveAWeight }};">{{ dLiveA }}</span>
+              </span>
+              <span style="display: flex; align-items: center; gap: 4px; opacity: {{ dDeadAOpacity }};">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="color: {{ dDeadAColor }};"><path d="M6 5v7a6 6 0 0 0 12 0V5"></path><path d="M9 6l6 6M15 6l-6 6"></path></svg>
+                <span style="color: {{ dDeadAColor }}; font-weight: {{ dDeadAWeight }};">{{ dDeadA }}</span>
+              </span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px;">
+            <span style="display: flex; align-items: center; gap: 6px; font-family: var(--font-heading); font-weight: 600;"><span style="width: 7px; height: 7px; border-radius: 50%; background: {{ teamBSolid }}; flex: none;"></span>{{ derivedBName }}</span>
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <span style="display: flex; align-items: center; gap: 4px; opacity: {{ dLiveBOpacity }};">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="color: {{ dLiveBColor }};"><path d="M6 5v7a6 6 0 0 0 12 0V5"></path><circle cx="12" cy="9" r="2.2" fill="currentColor" stroke="none"></circle></svg>
+                <span style="color: {{ dLiveBColor }}; font-weight: {{ dLiveBWeight }};">{{ dLiveB }}</span>
+              </span>
+              <span style="display: flex; align-items: center; gap: 4px; opacity: {{ dDeadBOpacity }};">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="color: {{ dDeadBColor }};"><path d="M6 5v7a6 6 0 0 0 12 0V5"></path><path d="M9 6l6 6M15 6l-6 6"></path></svg>
+                <span style="color: {{ dDeadBColor }}; font-weight: {{ dDeadBWeight }};">{{ dDeadB }}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <sc-if value="{{ showWarning }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size: 12px; background: var(--color-accent-100); border: 1px solid var(--color-accent-600); border-radius: 9px; color: var(--color-accent-700); padding: 8px 10px;">⚠ Both throwers show 2 ringers — all four cancel. A score above 0 isn't possible from ringers alone. Double-check the point value.</div>
+        </sc-if>
+
+        <button class="btn btn-primary btn-block" disabled="{{ !canConfirm }}" onClick="{{ confirm }}" style="padding: 13px; font-size: 15px; margin-top: 4px; background: {{ primaryAction }}; border-color: {{ primaryAction }};">
+          {{ confirmLabel }}
+        </button>
+      </div>
+      </div>
+    </sc-if>
+
+    <!-- Game stats + game over -->
+    <sc-if value="{{ isGameOver }}" hint-placeholder-val="{{ false }}">
+      <div class="card" style="border-radius: 14px; background: #fff; border: 1px solid var(--color-divider); box-shadow: var(--shadow-sm);">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between;">
+          <div>
+            <div style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-neutral-600); font-weight: 700;">Game Over</div>
+            <div style="font-family: var(--font-heading); font-size: 24px; font-weight: 600; color: {{ winnerColor }};">{{ winnerName }} Wins</div>
+          </div>
+          <div style="text-align: right;"><div style="font-size: 11px; opacity: 0.6;">Innings Played</div><div style="font-family: var(--font-heading); font-size: 26px; font-weight: 600;">{{ inningsPlayed }}</div></div>
+        </div>
+
+        <div style="border: 1px solid {{ teamAColor }}; border-left: 5px solid {{ teamAColor }}; background: var(--color-neutral-100); box-shadow: inset 0 1px 3px rgba(29,31,32,0.08); border-radius: 8px; padding: 8px; margin-top: 10px;">
+          <div style="font-family: var(--font-heading); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: {{ teamAColor }}; margin-bottom: 4px;">{{ teamAName }}</div>
+          <table class="table">
+            <thead><tr><th>Player</th><th>Pts</th><th>Shoes</th><th>Live</th><th>Dead</th><th>Ring%</th></tr></thead>
+            <tbody>
+              <tr><td>{{ jonasName }}</td><td>{{ jonasPts }}</td><td>{{ jonasShoes }}</td><td>{{ jonasLive }}</td><td>{{ jonasDead }}</td><td>{{ jonasRing }}%</td></tr>
+              <tr><td>{{ debName }}</td><td>{{ debPts }}</td><td>{{ debShoes }}</td><td>{{ debLive }}</td><td>{{ debDead }}</td><td>{{ debRing }}%</td></tr>
+              <tr style="font-weight: 700; background: color-mix(in srgb, {{ teamAColor }} 12%, transparent); border-top: 2px solid {{ teamAColor }};"><td>Total</td><td>{{ totalA }}</td><td>{{ teamAShoes }}</td><td>{{ teamALive }}</td><td>{{ teamADead }}</td><td>{{ teamARingPct }}%</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="border: 1px solid {{ teamBSolid }}; border-left: 5px solid {{ teamBSolid }}; background: var(--color-neutral-100); box-shadow: inset 0 1px 3px rgba(29,31,32,0.08); border-radius: 8px; padding: 8px; margin-top: 10px;">
+          <div style="font-family: var(--font-heading); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: {{ teamBSolid }}; margin-bottom: 4px;">{{ teamBName }}</div>
+          <table class="table">
+            <thead><tr><th>Player</th><th>Pts</th><th>Shoes</th><th>Live</th><th>Dead</th><th>Ring%</th></tr></thead>
+            <tbody>
+              <tr><td>{{ priyaName }}</td><td>{{ priyaPts }}</td><td>{{ priyaShoes }}</td><td>{{ priyaLive }}</td><td>{{ priyaDead }}</td><td>{{ priyaRing }}%</td></tr>
+              <tr><td>{{ samName }}</td><td>{{ samPts }}</td><td>{{ samShoes }}</td><td>{{ samLive }}</td><td>{{ samDead }}</td><td>{{ samRing }}%</td></tr>
+              <tr style="font-weight: 700; background: color-mix(in srgb, {{ teamBSolid }} 12%, transparent); border-top: 2px solid {{ teamBSolid }};"><td>Total</td><td>{{ totalB }}</td><td>{{ teamBShoes }}</td><td>{{ teamBLive }}</td><td>{{ teamBDead }}</td><td>{{ teamBRingPct }}%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isGameOver }}" hint-placeholder-val="{{ false }}">
+      <button class="btn btn-primary btn-block" onClick="{{ resetGame }}" style="padding: 13px; font-size: 15px; background: {{ primaryAction }}; border-color: {{ primaryAction }}; border-radius: 9px;">
+        New Game
+      </button>
+    </sc-if>
+
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <div style="display: flex; justify-content: space-between; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.65;">
+        <span>Innings Progress</span>
+        <span style="font-weight: 700; opacity: 1;">Inning {{ progressInning }} of 15</span>
+      </div>
+      <div style="display: flex; gap: 4px;">
+        <sc-for list="{{ inningDots }}" as="d" hint-placeholder-count="15">
+          <div style="flex: 1; height: 6px; border-radius: 3px; background: {{ d.color }};"></div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <!-- Review modal -->
+  <sc-if value="{{ reviewOpen }}" hint-placeholder-val="{{ false }}">
+    <div class="dialog-backdrop" onClick="{{ closeReviewBackdrop }}">
+      <div class="dialog" style="width: 358px; max-height: 82vh; border-radius: 14px; background: var(--color-bg);" onClick="{{ stopProp }}">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div class="dialog-title">Review</div>
+          <button class="btn btn-icon btn-secondary" style="border-radius: 9px;" onClick="{{ toggleReview }}">✕</button>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <span class="tag" style="flex: 1; justify-content: center; padding: 8px; background: {{ teamATagBg }}; color: {{ teamAColor }}; border-radius: 9px;">{{ teamAName }}: {{ totalA }}</span>
+          <span class="tag" style="flex: 1; justify-content: center; padding: 8px; background: {{ teamBTagBg }}; color: {{ teamBTagText }}; border-radius: 9px;">{{ teamBName }}: {{ totalB }}</span>
+        </div>
+        <div style="overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+          <sc-for list="{{ reviewRows }}" as="row" hint-placeholder-count="4">
+            <div style="border: 1px solid var(--color-divider); border-radius: 9px; padding: 10px; cursor: pointer; background: {{ row.editingBg }};" onClick="{{ row.onClick }}">
+              <div style="display: flex; justify-content: space-between; font-size: 11px; opacity: 0.6;">
+                <span>Inn {{ row.inning }} · {{ row.end }}</span>
+                <span>{{ row.cumLabel }}</span>
+              </div>
+              <div style="font-family: var(--font-heading); font-weight: 600; font-size: 15px; color: {{ row.color }};">{{ row.resultLabel }}</div>
+              <div style="font-size: 12px; opacity: 0.75;">{{ row.detail }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const PLAYERS = {
+  jonas: { team: 'A' },
+  deb: { team: 'A' },
+  priya: { team: 'B' },
+  sam: { team: 'B' }
+};
+const DEFAULT_NAMES = { jonas: 'Jonas', deb: 'Deb', priya: 'Priya', sam: 'Sam' };
+const TEAM_A_NAME = 'Dust Devils';
+const TEAM_B_NAME = 'Iron Horses';
+// Named theme colors — the single source of truth for team/action color across the app.
+const TEAM_A_COLOR = '#053961';
+const TEAM_B = { solid: '#7C3C0F', light: '#f0ddd0', text: '#7C3C0F' };
+const PRIMARY_ACTION = '#0867C4';
+
+function idsForIndex(i) {
+  return i % 2 === 0 ? ['jonas', 'priya'] : ['deb', 'sam'];
+}
+
+class Component extends DCLogic {
+  state = {
+    turns: [],
+    form: { team: undefined, points: undefined, ringers: {} },
+    editingIndex: null,
+    reviewOpen: false,
+    cardPhase: 'idle',
+    pulseTeam: null,
+    teamAName: TEAM_A_NAME,
+    teamBName: TEAM_B_NAME,
+    names: { ...DEFAULT_NAMES }
+  };
+
+  componentDidMount() {
+    try {
+      const raw = localStorage.getItem('horseshoe_setup');
+      if (raw) {
+        const d = JSON.parse(raw);
+        this.setState({
+          teamAName: d.teamAName || TEAM_A_NAME,
+          teamBName: d.teamBName || TEAM_B_NAME,
+          names: {
+            jonas: d.aSouth || DEFAULT_NAMES.jonas,
+            deb: d.aNorth || DEFAULT_NAMES.deb,
+            priya: d.bSouth || DEFAULT_NAMES.priya,
+            sam: d.bNorth || DEFAULT_NAMES.sam
+          }
+        });
+      }
+    } catch (e) {}
+  }
+
+  defaultRingers = (s) => {
+    const ids = idsForIndex(s.editingIndex ?? s.turns.length);
+    return { [ids[0]]: 0, [ids[1]]: 0 };
+  };
+  selectTeamA = () => this.setState(s => ({ form: { team: 'A', points: undefined, ringers: this.defaultRingers(s) } }));
+  selectTeamB = () => this.setState(s => ({ form: { team: 'B', points: undefined, ringers: this.defaultRingers(s) } }));
+  selectNone = () => this.setState(s => ({ form: { team: 'none', points: 0, ringers: this.defaultRingers(s) } }));
+
+  selectPoints = (p) => {
+    if (p === 5) return;
+    this.setState(s => {
+      const idx = idsForIndex(s.editingIndex ?? s.turns.length);
+      const scorerId = s.form.team === 'A' ? idx[0] : idx[1];
+      const opponentId = s.form.team === 'A' ? idx[1] : idx[0];
+      const ringers = { ...s.form.ringers };
+      if (p === 1 || p === 2) { ringers[scorerId] = 0; ringers[opponentId] = 0; }
+      else if (p === 3 || p === 4) { ringers[scorerId] = 1; ringers[opponentId] = 0; }
+      else if (p === 6) { ringers[scorerId] = 2; ringers[opponentId] = 0; }
+      return { form: { ...s.form, points: p, ringers } };
+    });
+  };
+
+  selectRinger = (id, val) => this.setState(s => {
+    const idx = idsForIndex(s.editingIndex ?? s.turns.length);
+    const scorerId = s.form.team === 'A' ? idx[0] : (s.form.team === 'B' ? idx[1] : null);
+    const opponentId = s.form.team === 'A' ? idx[1] : (s.form.team === 'B' ? idx[0] : null);
+    const points = s.form.points;
+    const ringers = { ...s.form.ringers };
+    if (s.form.team === 'none') {
+      ringers[idx[0]] = val; ringers[idx[1]] = val;
+    } else if (points === 1) {
+      if (val > 1) return {};
+      ringers[scorerId] = val; ringers[opponentId] = val;
+    } else if (points === 2 || points === 4 || points === 6) {
+      return {};
+    } else if (points === 3) {
+      if (id !== scorerId) return {};
+      ringers[scorerId] = val;
+      ringers[opponentId] = val === 2 ? 1 : 0;
+    } else {
+      ringers[id] = val;
+    }
+    return { form: { ...s.form, ringers } };
+  });
+
+  commitTurn = () => this.setState(s => {
+    const idx = s.editingIndex ?? s.turns.length;
+    const ids = idsForIndex(idx);
+    const turn = {
+      team: s.form.team,
+      points: s.form.points || 0,
+      ringers: { [ids[0]]: s.form.ringers[ids[0]] || 0, [ids[1]]: s.form.ringers[ids[1]] || 0 }
+    };
+    const turns = s.turns.slice();
+    if (s.editingIndex != null) turns[s.editingIndex] = turn; else turns.push(turn);
+    return { turns, form: { team: undefined, points: undefined, ringers: {} }, editingIndex: null };
+  });
+
+  confirm = () => {
+    const scoringTeam = this.state.form.team;
+    this.setState({ cardPhase: 'out' });
+    setTimeout(() => {
+      this.commitTurn();
+      this.setState({ cardPhase: 'in-instant', pulseTeam: (scoringTeam === 'A' || scoringTeam === 'B') ? scoringTeam : null });
+      setTimeout(() => this.setState({ cardPhase: 'in' }), 30);
+      setTimeout(() => this.setState({ cardPhase: 'idle', pulseTeam: null }), 30 + 200);
+    }, 140);
+  };
+
+  cancelEdit = () => this.setState({ form: { team: undefined, points: undefined, ringers: {} }, editingIndex: null });
+  resetGame = () => {
+    try { localStorage.removeItem('horseshoe_setup'); } catch (e) {}
+    window.location.href = 'New Game Setup.dc.html';
+  };
+  toggleReview = () => this.setState(s => ({ reviewOpen: !s.reviewOpen }));
+  closeReviewBackdrop = () => this.setState({ reviewOpen: false });
+  stopProp = (e) => e.stopPropagation();
+
+  startEdit = (i) => this.setState(s => {
+    const t = s.turns[i];
+    return { form: { team: t.team, points: t.points, ringers: { ...t.ringers } }, editingIndex: i, reviewOpen: false };
+  });
+
+  renderVals() {
+    const { turns, form, editingIndex, reviewOpen, cardPhase, pulseTeam, names, teamAName, teamBName } = this.state;
+    const cardAnim = {
+      'out': { transform: 'translateX(-24px)', opacity: 0, transition: 'transform 140ms ease, opacity 140ms ease' },
+      'in-instant': { transform: 'translateX(24px)', opacity: 0, transition: 'none' },
+      'in': { transform: 'translateX(0)', opacity: 1, transition: 'transform 180ms ease, opacity 180ms ease' },
+      'idle': { transform: 'translateX(0)', opacity: 1, transition: 'none' }
+    }[cardPhase];
+    const npAnim = {
+      'out': { opacity: 1, transform: 'translateY(0)', transition: 'none' },
+      'in-instant': { opacity: 0, transform: 'translateY(-4px)', transition: 'none' },
+      'in': { opacity: 1, transform: 'translateY(0)', transition: 'opacity 200ms ease, transform 200ms ease' },
+      'idle': { opacity: 1, transform: 'translateY(0)', transition: 'none' }
+    }[cardPhase];
+    const pulseA = pulseTeam === 'A' ? { transform: 'scale(1.16)', transition: 'transform 150ms ease' } : { transform: 'scale(1)', transition: 'transform 150ms ease' };
+    const pulseB = pulseTeam === 'B' ? { transform: 'scale(1.16)', transition: 'transform 150ms ease' } : { transform: 'scale(1)', transition: 'transform 150ms ease' };
+    const agg = {
+      jonas: { pts: 0, shoes: 0, live: 0, dead: 0 },
+      deb: { pts: 0, shoes: 0, live: 0, dead: 0 },
+      priya: { pts: 0, shoes: 0, live: 0, dead: 0 },
+      sam: { pts: 0, shoes: 0, live: 0, dead: 0 }
+    };
+    let cumA = 0, cumB = 0;
+    const rows = [];
+    turns.forEach((t, i) => {
+      const end = i % 2 === 0 ? 'South' : 'North';
+      const inning = Math.floor(i / 2) + 1;
+      const ids = idsForIndex(i);
+      const r1 = t.ringers[ids[0]] || 0, r2 = t.ringers[ids[1]] || 0;
+      const dead = Math.min(r1, r2);
+      const live1 = r1 - dead, live2 = r2 - dead;
+      agg[ids[0]].shoes += 2; agg[ids[1]].shoes += 2;
+      agg[ids[0]].live += live1; agg[ids[0]].dead += dead;
+      agg[ids[1]].live += live2; agg[ids[1]].dead += dead;
+      if (t.team === 'A') { cumA += t.points; agg[ids[0]].pts += t.points; }
+      else if (t.team === 'B') { cumB += t.points; agg[ids[1]].pts += t.points; }
+      rows.push({ i, inning, end, team: t.team, points: t.points, cumA, cumB, aName: names[ids[0]], bName: names[ids[1]] });
+    });
+    const totalA = cumA, totalB = cumB;
+    const isGameOver = totalA >= 21 || totalB >= 21 || (turns.length >= 30 && totalA !== totalB);
+    const winnerIsA = totalA >= totalB;
+
+    const nextIndex = editingIndex ?? turns.length;
+    const nextInning = Math.floor(nextIndex / 2) + 1;
+    const nextEnd = nextIndex % 2 === 0 ? 'South' : 'North';
+    const nextIds = idsForIndex(nextIndex);
+    const devBadgeInning = nextInning;
+
+    const showPoints = form.team === 'A' || form.team === 'B';
+    const r1 = form.ringers[nextIds[0]];
+    const r2 = form.ringers[nextIds[1]];
+    const bothRingersSet = r1 !== undefined && r2 !== undefined;
+    const showWarning = bothRingersSet && r1 === 2 && r2 === 2 && showPoints && (form.points || 0) > 0;
+    const dr1 = r1 || 0, dr2 = r2 || 0;
+    const ddead = Math.min(dr1, dr2);
+    const dlive1 = dr1 - ddead, dlive2 = dr2 - ddead;
+    const liveStyle = (n) => ({ color: n > 0 ? '#d9b04c' : 'var(--color-neutral-400)', opacity: n > 0 ? 1 : 0.5, weight: n > 0 ? 700 : 400 });
+    const deadStyle = (n) => ({ color: n > 0 ? 'var(--color-accent-700)' : 'var(--color-neutral-400)', opacity: n > 0 ? 1 : 0.5, weight: n > 0 ? 700 : 400 });
+    const dLiveA = liveStyle(dlive1), dDeadA = deadStyle(ddead), dLiveB = liveStyle(dlive2), dDeadB = deadStyle(ddead);
+    const canConfirm = form.team !== undefined && (form.team === 'none' || typeof form.points === 'number') && bothRingersSet;
+
+    const mk = (val, active, onClick, disabled) => ({
+      value: val,
+      bg: active ? PRIMARY_ACTION : '#fff',
+      color: disabled ? 'var(--color-neutral-500)' : (active ? '#fff' : 'var(--color-text)'),
+      shadow: active ? '0 0 0 2px #fff, 0 2px 6px rgba(8,103,196,0.45)' : '0 1px 2px rgba(29,31,32,0.14)',
+      border: active ? '2px solid ' + PRIMARY_ACTION : '1px solid var(--color-divider)',
+      onClick, disabled: !!disabled
+    });
+    const pointOptions = [1, 2, 3, 4, 5, 6].map(p => {
+      const o = mk(p, form.points === p, () => this.selectPoints(p), p === 5);
+      o.pointDisabled = !showPoints || p === 5;
+      return o;
+    });
+    const scorerId = form.team === 'A' ? nextIds[0] : (form.team === 'B' ? nextIds[1] : null);
+    const opponentId = form.team === 'A' ? nextIds[1] : (form.team === 'B' ? nextIds[0] : null);
+    const sVal = scorerId ? (form.ringers[scorerId] || 0) : 0;
+    // sDisabled/oDisabled index by ringer value (0,1,2) — true means that value is not tappable for that role
+    let sDisabled = [false, false, false], oDisabled = [false, false, false];
+    if (form.team !== 'none') {
+      if (form.points === 1) { sDisabled[2] = true; oDisabled[2] = true; }
+      else if (form.points === 2) { sDisabled[1] = true; sDisabled[2] = true; oDisabled[1] = true; oDisabled[2] = true; }
+      else if (form.points === 3) {
+        sDisabled[0] = true;
+        if (sVal === 2) { oDisabled[0] = true; oDisabled[2] = true; }
+        else { oDisabled[1] = true; oDisabled[2] = true; }
+      } else if (form.points === 4) { sDisabled[0] = true; sDisabled[2] = true; oDisabled[1] = true; oDisabled[2] = true; }
+      else if (form.points === 6) { sDisabled[0] = true; sDisabled[1] = true; oDisabled[1] = true; oDisabled[2] = true; }
+    }
+    const isDisabled = (id, v) => (id === opponentId && oDisabled[v]) || (id === scorerId && sDisabled[v]);
+    const ringerAOptions = [0, 1, 2].map(v => mk(v, r1 === v, () => this.selectRinger(nextIds[0], v), isDisabled(nextIds[0], v)));
+    const ringerBOptions = [0, 1, 2].map(v => mk(v, r2 === v, () => this.selectRinger(nextIds[1], v), isDisabled(nextIds[1], v)));
+
+    const shoesTotal = turns.length * 4;
+    const liveTotal = agg.jonas.live + agg.deb.live + agg.priya.live + agg.sam.live;
+    const deadTotal = agg.jonas.dead + agg.deb.dead + agg.priya.dead + agg.sam.dead;
+    const ringPctTotal = shoesTotal ? Math.round((liveTotal + deadTotal) / shoesTotal * 100) : 0;
+    const ringPct = (id) => agg[id].shoes ? Math.round((agg[id].live + agg[id].dead) / agg[id].shoes * 100) : 0;
+    const teamAShoes = agg.jonas.shoes + agg.deb.shoes, teamALive = agg.jonas.live + agg.deb.live, teamADead = agg.jonas.dead + agg.deb.dead;
+    const teamBShoes = agg.priya.shoes + agg.sam.shoes, teamBLive = agg.priya.live + agg.sam.live, teamBDead = agg.priya.dead + agg.sam.dead;
+    const teamARingPct = teamAShoes ? Math.round((teamALive + teamADead) / teamAShoes * 100) : 0;
+    const teamBRingPct = teamBShoes ? Math.round((teamBLive + teamBDead) / teamBShoes * 100) : 0;
+
+    const completedInnings = Math.floor(turns.length / 2);
+    const progressInning = isGameOver ? Math.max(nextInning - (nextIndex >= turns.length ? 0 : 0), Math.ceil(turns.length / 2)) : nextInning;
+    const inningDots = Array.from({ length: 15 }, (_, i) => {
+      const inningNum = i + 1;
+      let color = 'var(--color-neutral-300)';
+      if (inningNum < progressInning || (isGameOver && inningNum <= Math.ceil(turns.length / 2))) color = 'var(--color-accent-600)';
+      else if (inningNum === progressInning && !isGameOver) color = 'var(--color-accent-400)';
+      return { color };
+    });
+
+    const reviewRows = rows.map(row => {
+      const color = row.team === 'A' ? TEAM_A_COLOR : (row.team === 'B' ? TEAM_B.text : 'var(--color-text)');
+      const label = row.team === 'none' ? 'No score' : `${row.team === 'A' ? teamAName : teamBName} +${row.points}`;
+      return {
+        i: row.i,
+        inning: row.inning,
+        end: row.end,
+        cumLabel: `${row.cumA}–${row.cumB}`,
+        color,
+        resultLabel: label,
+        detail: `${row.aName}: ${row.points && row.team === 'A' ? 'scored' : ''}`.trim() ? undefined : undefined,
+        onClick: () => this.startEdit(row.i),
+        editingBg: editingIndex === row.i ? 'var(--color-accent-100)' : 'transparent'
+      };
+    }).reverse();
+    // fill in detail text (ringer summary) separately for clarity
+    rows.forEach((row, idx) => {
+      const rr = reviewRows[rows.length - 1 - idx];
+      const t = turns[row.i];
+      const ids = idsForIndex(row.i);
+      const r1v = t.ringers[ids[0]] || 0, r2v = t.ringers[ids[1]] || 0;
+      const dead = Math.min(r1v, r2v);
+      rr.detail = `${names[ids[0]]}: ${r1v - dead} live / ${dead} dead · ${names[ids[1]]}: ${r2v - dead} live / ${dead} dead`;
+    });
+
+    return {
+      totalA, totalB, isGameOver, notGameOver: !isGameOver,
+      teamAName, teamBName,
+      jonasName: names.jonas, debName: names.deb, priyaName: names.priya, samName: names.sam,
+      teamAColor: TEAM_A_COLOR, primaryAction: PRIMARY_ACTION,
+      cardTransform: cardAnim.transform, cardOpacity: cardAnim.opacity, cardTransition: cardAnim.transition,
+      npTransform: npAnim.transform, npOpacity: npAnim.opacity, npTransition: npAnim.transition,
+      pulseATransform: pulseA.transform, pulseATransition: pulseA.transition,
+      pulseBTransform: pulseB.transform, pulseBTransition: pulseB.transition,
+
+      teamBSolid: TEAM_B.solid, teamBTextColor: TEAM_B.text,
+      jonasLive: agg.jonas.live, jonasDead: agg.jonas.dead, jonasPts: agg.jonas.pts, jonasShoes: agg.jonas.shoes, jonasRing: ringPct('jonas'),
+      debLive: agg.deb.live, debDead: agg.deb.dead, debPts: agg.deb.pts, debShoes: agg.deb.shoes, debRing: ringPct('deb'),
+      priyaLive: agg.priya.live, priyaDead: agg.priya.dead, priyaPts: agg.priya.pts, priyaShoes: agg.priya.shoes, priyaRing: ringPct('priya'),
+      samLive: agg.sam.live, samDead: agg.sam.dead, samPts: agg.sam.pts, samShoes: agg.sam.shoes, samRing: ringPct('sam'),
+      nextInning, nextEnd, throwerAName: names[nextIds[0]], throwerBName: names[nextIds[1]],
+      showFinalInningBadge: devBadgeInning >= 15, finalInningLabel: devBadgeInning > 15 ? 'Extra Innings' : 'Final Inning',
+      npPanelBg: devBadgeInning > 15 ? '#fdece9' : (devBadgeInning === 15 ? '#fff6e6' : 'var(--color-accent-100)'),
+      npPanelBorder: devBadgeInning > 15 ? '#b6362c' : (devBadgeInning === 15 ? '#d98d1f' : 'var(--color-accent-300)'),
+      bandGradient: devBadgeInning > 15 ? 'linear-gradient(90deg, #c9382d, #7a1610)' : 'linear-gradient(90deg, #f2a63d, #d9453a)',
+      isEditing: editingIndex != null,
+      teamASelBg: form.team === 'A' ? TEAM_A_COLOR : '#fff',
+      teamASelText: form.team === 'A' ? '#fff' : 'var(--color-text)',
+      teamASelShadow: form.team === 'A' ? 'none' : '0 1px 2px rgba(29,31,32,0.14)',
+      teamBSelBg: form.team === 'B' ? TEAM_B.solid : '#fff',
+      teamBSelText: form.team === 'B' ? '#fff' : 'var(--color-text)',
+      teamBSelShadow: form.team === 'B' ? 'none' : '0 1px 2px rgba(29,31,32,0.14)',
+      noneSelBg: form.team === 'none' ? 'var(--color-neutral-800)' : '#fff',
+      noneSelText: form.team === 'none' ? '#fff' : 'var(--color-text)',
+      noneSelShadow: form.team === 'none' ? 'none' : '0 1px 2px rgba(29,31,32,0.14)',
+      selectTeamA: this.selectTeamA, selectTeamB: this.selectTeamB, selectNone: this.selectNone,
+      showPoints, pointsOpacity: showPoints ? 1 : 0.45, pointOptions, ringerAOptions, ringerBOptions,
+      showDerived: bothRingersSet, showWarning,
+      derivedAName: names[nextIds[0]], derivedBName: names[nextIds[1]],
+      dLiveA: dlive1, dDeadA: ddead, dLiveB: dlive2, dDeadB: ddead,
+      dLiveAColor: dLiveA.color, dLiveAOpacity: dLiveA.opacity, dLiveAWeight: dLiveA.weight,
+      dDeadAColor: dDeadA.color, dDeadAOpacity: dDeadA.opacity, dDeadAWeight: dDeadA.weight,
+      dLiveBColor: dLiveB.color, dLiveBOpacity: dLiveB.opacity, dLiveBWeight: dLiveB.weight,
+      dDeadBColor: dDeadB.color, dDeadBOpacity: dDeadB.opacity, dDeadBWeight: dDeadB.weight,
+      canConfirm, confirm: this.confirm, confirmLabel: editingIndex != null ? 'Save Changes' : 'Confirm & Next →',
+      cancelEdit: this.cancelEdit,
+      inningsPlayed: Math.ceil(turns.length / 2), shoesTotal, liveTotal, deadTotal, ringPctTotal,
+      teamAShoes, teamALive, teamADead, teamARingPct,
+      teamBShoes, teamBLive, teamBDead, teamBRingPct,
+      progressInning, inningDots,
+      winnerName: winnerIsA ? teamAName : teamBName, winnerColor: winnerIsA ? TEAM_A_COLOR : TEAM_B.text,
+      resetGame: this.resetGame,
+      reviewOpen, toggleReview: this.toggleReview, closeReviewBackdrop: this.closeReviewBackdrop, stopProp: this.stopProp,
+      teamATagBg: 'color-mix(in srgb, ' + TEAM_A_COLOR + ' 12%, transparent)',
+      teamBTagBg: 'color-mix(in srgb, ' + TEAM_B.solid + ' 12%, transparent)', teamBTagText: TEAM_B.text,
+      reviewRows
+    };
+  }
+}
+
+</script>
+</body>
+</html>
