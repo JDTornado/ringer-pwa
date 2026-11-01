@@ -80,6 +80,7 @@ What Josh configured in the Cloudflare dashboard (2026-11-01):
 | Build command | `npm run build` |
 | Deploy command | `npx wrangler deploy` |
 | Preview builds | On by default for all non-production branches (new-Worker default). Cloudflare runs `npx wrangler preview` (open beta) after the build; it **requires a `previews` block in `wrangler.jsonc`** (ours is empty). The dashboard doesn't show this command; it appears only in the build log. |
+| Preview URLs | Per branch (stable, updates on each push): `https://<branch-slug>-ringer.jdtornado.workers.dev`, e.g. `chore-cleanup-ringer…`. Per build (permanent): `https://<id>-ringer.jdtornado.workers.dev`. Both are printed at the end of the build log and linked from the GitHub check. Confirmed 2026-11-01. |
 | Build environment variables | none |
 | Production URL | https://ringer.jdtornado.workers.dev |
 | Custom domain | none |
@@ -113,3 +114,9 @@ Neither needs a Cloudflare login. Don't run `wrangler login` or a real
 If `wrangler dev` fails with "This Worker requires compatibility date …", the
 date in `wrangler.jsonc` is newer than the installed wrangler supports. Use a
 date the installed version supports, or update wrangler.
+
+## Previews are a separate app on the phone
+
+Each preview URL is a different origin from production, so it gets its own
+service worker, its own install, and its own saved game. Testing a preview
+can't touch a real game in progress on the production app, and vice versa.
