@@ -16,6 +16,11 @@
   // Give each uploaded version (e.g. a non-main branch build) its own preview
   // URL. Also already the default; explicit for the same reasons.
   "preview_urls": true,
+  // Required by Cloudflare's branch previews: Workers Builds runs
+  // `npx wrangler preview` (open beta) for every non-main branch, and that
+  // command refuses to run without a `previews` block. Empty = previews use
+  // the same settings as production (assets etc. stay at the top level).
+  "previews": {},
   "assets": {
     // Vite's production build output.
     "directory": "./dist",

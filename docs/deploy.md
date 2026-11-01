@@ -79,7 +79,7 @@ What Josh configured in the Cloudflare dashboard (2026-11-01):
 | Root directory | repo root |
 | Build command | `npm run build` |
 | Deploy command | `npx wrangler deploy` |
-| Preview builds | On by default for all non-production branches (the new-Worker default, per the dashboard notice). The dashboard doesn't show the preview command. **To confirm on the first branch push.** |
+| Preview builds | On by default for all non-production branches (new-Worker default). Cloudflare runs `npx wrangler preview` (open beta) after the build; it **requires a `previews` block in `wrangler.jsonc`** (ours is empty). The dashboard doesn't show this command; it appears only in the build log. |
 | Build environment variables | none |
 | Production URL | https://ringer.jdtornado.workers.dev |
 | Custom domain | none |
