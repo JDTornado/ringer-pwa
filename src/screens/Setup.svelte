@@ -10,9 +10,17 @@
   let bSouth = $state('');
   let bNorth = $state('');
 
-  const ready = $derived(
-    [teamAName, aSouth, aNorth, teamBName, bSouth, bNorth].every((v) => v.trim() !== ''),
-  );
+  const fields = $derived([teamAName, aSouth, aNorth, teamBName, bSouth, bNorth]);
+  const ready = $derived(fields.every((v) => v.trim() !== ''));
+
+  // Tell the update banner when a reload would lose typed text (any field
+  // non-empty, even whitespace). Cleared when this screen goes away.
+  $effect(() => {
+    gameState.setupHasInput = fields.some((v) => v !== '');
+    return () => {
+      gameState.setupHasInput = false;
+    };
+  });
 
   function start(e: SubmitEvent) {
     e.preventDefault();

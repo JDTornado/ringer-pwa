@@ -100,11 +100,30 @@ class GameState {
   });
 
   /**
-   * True when reloading the page can't lose input: no verdict is half-entered
-   * on the card and no past frame is being edited. Confirmed frames are
-   * already saved in the draft. (On setup and game over the card is empty.)
+   * True while any setup field has text. Owned by the Setup screen (it syncs
+   * this from its form and clears it on unmount); setup text isn't saved
+   * anywhere, so a reload would lose it.
    */
-  canReloadSafely = $derived(this.draft === null && this.editingIndex === null);
+  setupHasInput = $state(false);
+
+  /**
+   * What a page reload would lose right now, or null if nothing:
+   *   'setup': typed-in setup fields;
+   *   'frame': a half-entered verdict, or a past frame being edited.
+   * Confirmed frames are already saved in the draft.
+   */
+  reloadBlocker: 'setup' | 'frame' | null = $derived(
+    this.game === null
+      ? this.setupHasInput
+        ? 'setup'
+        : null
+      : this.draft !== null || this.editingIndex !== null
+        ? 'frame'
+        : null,
+  );
+
+  /** True when reloading the page can't lose input (see reloadBlocker). */
+  canReloadSafely = $derived(this.reloadBlocker === null);
 
   options = $derived(this.draft ? optionStates(this.draft) : null);
   canConfirm = $derived(this.draft !== null && isDraftComplete(this.draft));

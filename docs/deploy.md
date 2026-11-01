@@ -37,9 +37,11 @@ mid-game, so updates wait for the user:
    always reaches Cloudflare.)
 2. A new version downloads in the background and waits. A slim **"Update
    available"** banner appears at the top with a **Reload** button.
-3. **Reload is disabled while a frame is half-entered or a past frame is being
-   edited**, with the hint "Finish this frame first". It's enabled on setup, on
-   game over, and on the scoring screen when the entry card is empty.
+3. **Reload is disabled whenever it would lose input**: while a frame is
+   half-entered or a past frame is being edited ("Finish this frame first"),
+   and on setup while any of the six fields has text ("Finish setup first").
+   It's enabled on an empty setup form, on game over, and on the scoring screen
+   when the entry card is empty.
 4. Tapping Reload switches to the new version and reloads. Confirmed frames are
    already saved on the device, so the game resumes where it was.
 

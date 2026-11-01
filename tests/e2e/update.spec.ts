@@ -89,7 +89,7 @@ test('new deploy: banner, Reload gated on the entry card, game resumes after rel
   expect(errors).toEqual([]);
 });
 
-test('Reload is enabled on setup, and the build tag shows the new version after it', async ({ page }) => {
+test('setup: Reload disabled while the form has text; build tag shows the new version after it', async ({ page }) => {
   const errors = watchConsole(page);
   server.use('v1');
   await page.goto(server.url);
@@ -99,7 +99,22 @@ test('Reload is enabled on setup, and the build tag shows the new version after 
   server.use('v2');
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
   const reload = page.getByTestId('update-banner').getByRole('button', { name: 'Reload' });
+  const hint = page.getByTestId('update-hint');
+
+  // Empty setup form: nothing to lose, Reload enabled.
   await expect(reload).toBeEnabled({ timeout: 15_000 });
+  await expect(hint).toHaveCount(0);
+
+  // Any typed text would be lost: Reload disabled, with the setup hint.
+  await page.getByLabel('Team B North player').fill('Bob');
+  await expect(reload).toBeDisabled();
+  await expect(hint).toHaveText('Finish setup first');
+
+  // Cleared again: enabled.
+  await page.getByLabel('Team B North player').fill('');
+  await expect(reload).toBeEnabled();
+  await expect(hint).toHaveCount(0);
+
   await reload.click();
   await expect(page.getByTestId('build-tag')).toHaveText('build bbbbbbb', { timeout: 15_000 });
   await expect(page.getByTestId('update-banner')).toHaveCount(0);

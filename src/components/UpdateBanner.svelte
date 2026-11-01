@@ -1,21 +1,24 @@
 <script lang="ts">
-  // Slim "new version" banner. Reload is offered only when it can't lose a
-  // half-entered or half-edited frame.
+  // Slim "new version" banner. Reload is offered only when it can't lose
+  // input: typed setup fields, or a half-entered or half-edited frame.
   interface Props {
-    canReload: boolean;
+    /** What a reload would lose; null = safe to reload. */
+    blocker: 'setup' | 'frame' | null;
     onReload: () => void;
   }
-  let { canReload, onReload }: Props = $props();
+  let { blocker, onReload }: Props = $props();
+
+  const HINTS = { setup: 'Finish setup first', frame: 'Finish this frame first' } as const;
 </script>
 
 <div class="update" role="status" data-testid="update-banner">
   <div class="text">
     <strong>Update available</strong>
-    {#if !canReload}
-      <span class="hint" data-testid="update-hint">Finish this frame first</span>
+    {#if blocker !== null}
+      <span class="hint" data-testid="update-hint">{HINTS[blocker]}</span>
     {/if}
   </div>
-  <button class="btn reload" disabled={!canReload} onclick={onReload}>Reload</button>
+  <button class="btn reload" disabled={blocker !== null} onclick={onReload}>Reload</button>
 </div>
 
 <style>

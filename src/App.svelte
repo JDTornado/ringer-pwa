@@ -19,7 +19,7 @@
 <main class="page">
   <div class="sheet" data-screen={gs.loaded ? gs.screen : 'loading'}>
     {#if updateState.available}
-      <UpdateBanner canReload={gs.canReloadSafely} onReload={() => updateState.reload()} />
+      <UpdateBanner blocker={gs.reloadBlocker} onReload={() => updateState.reload()} />
     {/if}
     {#if gs.loaded}
       {#if gs.screen === 'setup'}
