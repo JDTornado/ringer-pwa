@@ -18,7 +18,10 @@ test.describe('app shell', () => {
 
     // Heading font is the self-hosted Barlow Condensed, and it actually loaded.
     await expect(heading).toHaveCSS('font-family', /Barlow Condensed/);
-    expect(await page.evaluate(() => document.fonts.check('700 22px "Barlow Condensed"'))).toBe(true);
+    // Fonts load asynchronously after first paint: wait for them, then check.
+    await expect
+      .poll(() => page.evaluate(async () => (await document.fonts.ready, document.fonts.check('700 22px "Barlow Condensed"'))))
+      .toBe(true);
 
     // Tokens resolve to the data-model colors (team inputs are bordered in them).
     await expect(page.getByLabel('Team A name')).toHaveCSS('border-color', 'rgb(5, 57, 97)');

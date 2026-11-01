@@ -61,8 +61,8 @@ export function watchConsole(page: Page): string[] {
   return errors;
 }
 
-export async function startGame(page: Page): Promise<void> {
-  await page.goto('/');
+export async function startGame(page: Page, url = '/'): Promise<void> {
+  await page.goto(url);
   await page.getByLabel('Team A name').fill(NAMES.teamA);
   await page.getByLabel('Team A South player').fill(NAMES.aSouth);
   await page.getByLabel('Team A North player').fill(NAMES.aNorth);

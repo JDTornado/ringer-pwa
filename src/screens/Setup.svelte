@@ -59,6 +59,8 @@
   <div class="note">South throws first each inning, so South players open the game.</div>
 
   <button class="btn btn-primary start" type="submit" disabled={!ready}>Start Game →</button>
+
+  <div class="build" data-testid="build-tag">build {__BUILD_ID__}</div>
 </form>
 
 <style>
@@ -142,6 +144,13 @@
     font-size: 12px;
     opacity: 0.65;
     padding: 0 2px;
+  }
+  .build {
+    margin-top: 4px;
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--color-neutral-500);
   }
   .start {
     padding: 15px;

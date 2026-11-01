@@ -9,6 +9,13 @@
   // the app until we bump this deliberately. Must not be newer than what the
   // installed wrangler's local runtime supports, or `wrangler dev` fails.
   "compatibility_date": "2026-10-30",
+  // Serve production at https://ringer.jdtornado.workers.dev. This was already
+  // the default (no custom domain or routes); stated here so wrangler stops
+  // warning that it's implicit, and so turning it off is a deliberate edit.
+  "workers_dev": true,
+  // Give each uploaded version (e.g. a non-main branch build) its own preview
+  // URL. Also already the default; explicit for the same reasons.
+  "preview_urls": true,
   "assets": {
     // Vite's production build output.
     "directory": "./dist",

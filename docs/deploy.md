@@ -20,35 +20,71 @@ What's in the repo:
   config: serve `./dist`, and fall back to `index.html` for unknown paths
   (`single-page-application`).
 - `public/_headers`: copied into `dist/` by Vite, read by Cloudflare.
-  - `no-cache` on `/`, `/index.html`, `/sw.js`, `/registerSW.js`, and
-    `/manifest.webmanifest`, so a new deploy is picked up and the service
-    worker can update.
+  - `no-cache` on `/`, `/index.html`, `/sw.js`, and `/manifest.webmanifest`,
+    so a new deploy is picked up and the service worker can update.
   - Long-lived `immutable` caching on `/assets/*`. Vite hashes these
     filenames, so a changed file always gets a new name.
   - `X-Robots-Tag: noindex` everywhere. The app is public but unlisted.
 - `.node-version`: the Node major version Cloudflare's build image uses.
 
-Users get updates automatically: the service worker is set to `autoUpdate`, so
-an open app picks up a new deploy on its next load.
+## How users get updates
+
+The app never reloads itself. A reload could wipe a half-entered frame
+mid-game, so updates wait for the user:
+
+1. The app checks for a new deploy when it comes back to the foreground, and
+   hourly while it's open. (`sw.js` is served `no-cache`, so the check
+   always reaches Cloudflare.)
+2. A new version downloads in the background and waits. A slim **"Update
+   available"** banner appears at the top with a **Reload** button.
+3. **Reload is disabled while a frame is half-entered or a past frame is being
+   edited**, with the hint "Finish this frame first". It's enabled on setup, on
+   game over, and on the scoring screen when the entry card is empty.
+4. Tapping Reload switches to the new version and reloads. Confirmed frames are
+   already saved on the device, so the game resumes where it was.
+
+If the user ignores the banner, the old version keeps working. The new one
+takes over the next time the app is fully closed and reopened.
+
+**Which version is a phone running?** The setup screen shows a small
+`build abc1234` tag: the commit's short SHA (from Cloudflare's
+`WORKERS_CI_COMMIT_SHA`; `git` locally; `dev` if neither).
+
+This is covered by `tests/e2e/update.spec.ts`. It builds two versions, serves
+the first, starts a game, "deploys" the second, and checks the banner, the
+Reload gating, and that the game resumes after Reload. Chromium and WebKit
+only, so on a real phone, check once after a deploy:
+
+1. With the app open on the scoring screen, push a change to `main` and wait
+   for the deploy.
+2. Switch away from the app and back. The banner should appear within a few
+   seconds.
+3. Tap a team: Reload greys out with "Finish this frame first". Confirm the
+   frame: Reload enables.
+4. Tap Reload: same inning, same score, and the setup screen's build tag shows
+   the new SHA after the game.
 
 ## Dashboard settings
 
-_Filled in from what Josh configured in the Cloudflare dashboard._
+What Josh configured in the Cloudflare dashboard (2026-11-01):
 
 | Setting | Value |
 |---|---|
-| Account | _TBD_ |
+| Account | Josh's personal Cloudflare account (JDTornado) |
 | Worker name | `ringer` (must match `wrangler.jsonc`) |
-| Git repository | _TBD_ |
+| Git repository | `JDTornado/ringer-pwa` |
 | Production branch | `main` |
-| Build command | _TBD_ (expected: `npm run build`) |
-| Deploy command | _TBD_ (Workers Builds default: `npx wrangler deploy`) |
-| Non-production branch deploy command | _TBD_ (default: `npx wrangler versions upload`) |
-| Preview URLs | _TBD_ |
-| Root directory | _TBD_ (repo root) |
-| Build environment variables | _TBD_ (none needed yet) |
-| Production URL | _TBD_ |
-| Custom domain | _TBD_ (none yet) |
+| Root directory | repo root |
+| Build command | `npm run build` |
+| Deploy command | `npx wrangler deploy` |
+| Preview builds | On by default for all non-production branches (the new-Worker default, per the dashboard notice). The dashboard doesn't show the preview command. **To confirm on the first branch push.** |
+| Build environment variables | none |
+| Production URL | https://ringer.jdtornado.workers.dev |
+| Custom domain | none |
+
+`wrangler.jsonc` sets `workers_dev: true` and `preview_urls: true`
+explicitly. Both match Cloudflare's defaults; they're written out so wrangler
+stops warning that they're implicit.
 
 ## Rolling back
 
@@ -57,9 +93,9 @@ _Filled in from what Josh configured in the Cloudflare dashboard._
 3. Then fix forward in git. The next push to `main` deploys again, so revert
    the bad commit on `main` (or merge a fix) before anyone pushes.
 
-Because of `autoUpdate`, phones running the bad version pick up the
-rolled-back one on their next load. An installed app that is open may need
-to be closed and reopened.
+Phones running the bad version see the "Update available" banner for the
+rolled-back version on their next foreground or hourly check, and switch when
+they tap Reload (or when the app is fully closed and reopened).
 
 ## Checking a change locally before it ships
 

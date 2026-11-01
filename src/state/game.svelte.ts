@@ -99,6 +99,13 @@ class GameState {
     return throwersAt(participants, this.cardSlot.end);
   });
 
+  /**
+   * True when reloading the page can't lose input: no verdict is half-entered
+   * on the card and no past frame is being edited. Confirmed frames are
+   * already saved in the draft. (On setup and game over the card is empty.)
+   */
+  canReloadSafely = $derived(this.draft === null && this.editingIndex === null);
+
   options = $derived(this.draft ? optionStates(this.draft) : null);
   canConfirm = $derived(this.draft !== null && isDraftComplete(this.draft));
   split = $derived(ringerSplit(this.draft?.ringersA ?? 0, this.draft?.ringersB ?? 0));
