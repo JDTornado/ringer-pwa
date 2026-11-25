@@ -439,6 +439,11 @@ isOneToOne: false
           Functions: {
             "claim_player":
 { Args: { "p_player_id": string }; Returns: undefined
+                           },
+"claimable_players":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "display_name": string,"id": string,"team_name": string
+            }[]
                            }
           }
           Enums: {

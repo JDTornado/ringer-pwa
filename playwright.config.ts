@@ -1,8 +1,12 @@
 import { defineConfig } from '@playwright/test';
+import { loadLocalSupabase } from './tests/e2e/local-supabase.mjs';
 
 // Runs against the PRODUCTION build (`vite preview`): the service worker
 // doesn't exist under `vite dev`.
 const PORT = 4173;
+
+// Sign-in runs against LOCAL Supabase (`npm run db:start` first).
+loadLocalSupabase();
 
 export default defineConfig({
   testDir: 'tests/e2e',

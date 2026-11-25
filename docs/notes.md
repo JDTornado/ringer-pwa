@@ -19,6 +19,19 @@ Tags: [db], [build], [deploy], [pwa], [ui], [device].
 
 ## Gotchas
 
+- [db] 2026-11-25: Supabase's default OTP email (local and hosted) contains only a
+  magic link, no code. A typed code needs a template with `{{ .Token }}`
+  (supabase/templates/sign_in_code.html); config.toml template changes need
+  `supabase stop` + `start`, not just `db reset`.
+- [db] 2026-11-25: Step 1's RLS let only linked members read `players`, so a new
+  account couldn't see the roster it must claim from. Fixed with the
+  `claimable_players()` function rather than loosening RLS.
+- [pwa] 2026-11-25: Creating the supabase-js client immediately refreshes an
+  expired saved session. Offline that logs failed requests, so the client is
+  created lazily and an offline launch uses the cached account instead.
+- [build] 2026-11-25: Parallel Playwright workers start in the same millisecond:
+  `Date.now()` alone made duplicate test emails (a 500 from /otp). Use
+  `crypto.randomUUID()`.
 - [build] 2026-11-24: Don't start Docker Desktop from Claude's sandboxed shell.
   It created `AppData\Local\Docker\run\sailor-ingest.sock` files nobody could
   open or delete ("The file cannot be accessed by the system"), and every later

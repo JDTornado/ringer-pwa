@@ -113,3 +113,26 @@ two members, one unlinked); the header of `seed.sql` lists them.
 
 To make someone an admin (local, or hosted once approved), run in SQL:
 `insert into public.admins (user_id, note) values ('<auth user id>', '<name>');`
+
+## Sign-in (email code)
+
+The app signs in with a **6-digit code typed into the app** (`signInWithOtp` +
+`verifyOtp`, type `email`), never a magic link: on iOS a link opens Safari,
+whose storage is separate from the installed app. Google sign-in is deferred
+(no Google Cloud project yet); it would plug in beside the email form.
+
+- **Local:** the app reads `VITE_SUPABASE_URL` and
+  `VITE_SUPABASE_PUBLISHABLE_KEY` from `.env.local` (copy `.env.example`). Codes
+  land in the local Mailpit inbox at http://127.0.0.1:54324. The seed accounts
+  (`tom@ringer.test`, `new@ringer.test`, ...) can sign in this way.
+- **Email template:** `supabase/templates/sign_in_code.html` (code only, no
+  link), used for both the magic-link and confirmation emails in
+  `config.toml`. Supabase's default template has only a link, so **the hosted
+  project needs the same template pasted into Auth → Email Templates (both
+  "Magic Link" and "Confirm signup")** before anyone can sign in there.
+- **First sign-in:** the account picks its player from `claimable_players()`
+  (unlinked accounts can't read `players` through RLS), then `claim_player()`.
+- **Rate limits:** Supabase allows one code per email per second (more on the
+  hosted project, 60 s by default). Local `email_sent` is raised for e2e.
+- `npm run test:e2e` needs local Supabase running; it reads the URL and keys
+  from `supabase status` and creates (and deletes) its own test accounts.
