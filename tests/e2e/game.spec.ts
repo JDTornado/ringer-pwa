@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { playerStats, runningTotals, teamStats } from '../../src/domain/derive';
 import {
   NAMES,

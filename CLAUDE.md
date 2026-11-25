@@ -43,8 +43,9 @@ Ignore in the prototype folder:
   - Shared reactive state lives in `.svelte.ts` modules.
 - **vite-plugin-pwa** for the manifest and service worker.
 - **IndexedDB** (via `idb-keyval` or `idb`) for the in-progress game draft.
-- **supabase-js** for the backend, added in a later phase. Until then, no network
-  calls.
+- **supabase-js** for the backend. So far only sign-in and the player claim
+  (`src/state/account.svelte.ts`); games still live only on the device. Builds
+  read `VITE_SUPABASE_*` from `.env.local` (local Supabase; see `.env.example`).
 - **Vitest** for domain logic and **Playwright** for browser verification.
 - npm. Dev machine is Windows; local Supabase needs Docker Desktop.
 - Hosting: **Cloudflare Workers static assets**, deployed by **Workers Builds**
@@ -149,7 +150,8 @@ npm run build        # production build (includes SW)
 npm run preview      # serve the build — use for PWA/offline testing
 npm run check        # svelte-check (src) + tsc -p tsconfig.node.json (configs, e2e)
 npm test             # vitest (src/**/*.test.ts)
-npm run test:e2e     # playwright, Chromium + WebKit at 390x844; builds and serves
+npm run test:e2e     # playwright, Chromium + WebKit at 390x844; needs local Supabase
+                     #   running (signs in test accounts); builds and serves
                      #   the production bundle itself (port 4173), so SW is real
 npm run icons        # regenerate public/ icons from scripts/gen-icons.mjs
 npm run deploy:dry   # build + `wrangler deploy --dry-run` (no login, uploads nothing)

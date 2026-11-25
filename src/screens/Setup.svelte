@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AccountMenu from '../components/AccountMenu.svelte';
   import { gameState } from '../state/game.svelte';
 
   // Local form state. Deliberate change from the prototype: no placeholder
@@ -30,9 +31,12 @@
 </script>
 
 <form class="setup" onsubmit={start}>
-  <div>
-    <h1>New Game</h1>
-    <div class="sub">Set up two teams, two players each.</div>
+  <div class="head">
+    <div>
+      <h1>New Game</h1>
+      <div class="sub">Set up two teams, two players each.</div>
+    </div>
+    <AccountMenu />
   </div>
 
   {#each [{ side: 'a', label: 'Team A' }, { side: 'b', label: 'Team B' }] as t (t.side)}
@@ -76,6 +80,12 @@
     padding: 16px;
     display: flex;
     flex-direction: column;
+    gap: 12px;
+  }
+  .head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
     gap: 12px;
   }
   h1 {
