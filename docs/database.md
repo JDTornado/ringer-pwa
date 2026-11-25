@@ -80,8 +80,16 @@ if the schema can't satisfy one, that's a spec/schema disagreement — stop and 
 - Frames sort in play order with a plain `ORDER BY inning, court_end` (south first).
 - A duplicate `client_game_id` is rejected (offline-retry idempotency).
 - A player can't be on two teams in the same season.
-- Every table in `public` has RLS enabled, and with no policies the anon role
-  can't read or write any of them.
+- Schedule: a team match's night and teams are in its season; a pit goes to one
+  team match per night; a pairing's team is in its team match; a game's night,
+  teams, pairings and pit match its team match; each grid cell is played once
+  (voided games excepted).
+- Every table in `public` has RLS enabled. Anon, and a signed-in account with no
+  linked player, can't read or write any of them.
+- Access (`03_access.test.sql`, run as the seed's accounts): members read; only
+  the owner edits a game until it locks; handoffs are the only way to change
+  scorer; locked games are admin-only and audited; an account claims a player
+  once, then only an admin can relink.
 
 ## Supabase MCP server (optional, read-only)
 
@@ -100,4 +108,8 @@ Supabase docs — not for making schema changes.
 `supabase/seed.sql` runs on every local `db reset`, never on the hosted project.
 Use it for a realistic test season: a couple of teams, players (including one
 guest and one rover), a match night, and a completed game with frames — enough to
-exercise stats queries locally.
+exercise stats queries locally. It also creates local sign-in accounts (admin,
+two members, one unlinked); the header of `seed.sql` lists them.
+
+To make someone an admin (local, or hosted once approved), run in SQL:
+`insert into public.admins (user_id, note) values ('<auth user id>', '<name>');`

@@ -3,8 +3,8 @@
 --
 -- Implements docs/data-model.md (rules and meaning). Workflow: docs/database.md.
 -- Structure, integrity constraints, one derived view (game_scores), and RLS
--- enabled on every table with NO policies (deny-all through the API). Access
--- policies, stats views, and standings come in later migrations.
+-- enabled on every table. Access policies are in the next migration; stats
+-- views and standings come later.
 --
 -- Design spine: PLAYERS are the core entity. Accounts, team membership, and
 -- game participation are all separate relationships TO a player, never baked
@@ -121,6 +121,10 @@ create table team_memberships (
 );
 
 -- ---------- Match nights ---------------------------------------------------
+-- locks_at: when this night's app-scored games lock (end of night). Admins set
+-- it when scheduling and can set it to now() to lock early. NULL = not yet
+-- scheduled to lock. After it passes, only admins can change those games
+-- (see the access migration).
 
 create table match_nights (
   id          uuid primary key default gen_random_uuid(),
@@ -128,32 +132,59 @@ create table match_nights (
   played_on   date not null,
   venue       text,
   status      entity_status not null default 'scheduled',
-  created_at  timestamptz not null default now()
+  locks_at    timestamptz,
+  created_at  timestamptz not null default now(),
+  -- Target for team_matches' composite FK (match season = night season).
+  unique (id, season_id)
 );
 
--- ---------- Team matches (Team A vs Team B on a night) ----------------------
+-- ---------- Team matches (Team A vs Team B on a night; the schedule) --------
 
 create table team_matches (
   id          uuid primary key default gen_random_uuid(),
-  night_id    uuid not null references match_nights (id) on delete cascade,
+  night_id    uuid not null,
   season_id   uuid not null references seasons (id),        -- denormalized for queries
   team_a_id   uuid not null,
   team_b_id   uuid not null,
   status      entity_status not null default 'scheduled',
   created_at  timestamptz not null default now(),
   constraint team_matches_teams_differ check (team_a_id <> team_b_id),
+  -- The night must be in the match's season.
+  constraint team_matches_night_season_fk
+    foreign key (night_id, season_id) references match_nights (id, season_id) on delete cascade,
   -- Both teams must belong to the match's season.
   constraint team_matches_team_a_season_fk
     foreign key (team_a_id, season_id) references teams (id, season_id),
   constraint team_matches_team_b_season_fk
-    foreign key (team_b_id, season_id) references teams (id, season_id)
+    foreign key (team_b_id, season_id) references teams (id, season_id),
+  -- Targets for composite FKs from pits and games.
+  unique (id, night_id),
+  unique (id, night_id, team_a_id, team_b_id)
 );
 
--- ---------- Pairings (a team's night pair; the captain's setup) -------------
--- Night-scoped. Three per team per night. This is the captain's INTENT.
--- Who actually played each game is recorded per-game in game_participants,
--- which is the authoritative record for stats. Never compute a stat by
--- joining a game to its pairing's members.
+-- ---------- Pit assignments ------------------------------------------------
+-- The pits a team match uses on its night (two games run at once, so usually
+-- two). A pit can't be given to two team matches on the same night.
+
+create table team_match_pits (
+  id            uuid primary key default gen_random_uuid(),
+  night_id      uuid not null,
+  team_match_id uuid not null,
+  pit           smallint not null check (pit >= 1),
+  created_at    timestamptz not null default now(),
+  unique (night_id, pit),
+  unique (team_match_id, pit),
+  constraint team_match_pits_match_night_fk
+    foreign key (team_match_id, night_id) references team_matches (id, night_id) on delete cascade
+);
+
+-- ---------- Pairings (a team's pair for the night; a label) ----------------
+-- Each team fields 3 pairings a night; each plays the 3 opposing pairings
+-- (a 3x3 grid of 9 games). A pairing is just the label for a grid row or
+-- column: team match + team + slot. The app creates it when a pair plays
+-- its first game. WHO played is recorded on each game (game_participants),
+-- never on the pairing, so subs and early leavers need no pairing edits.
+-- An admin fixes a mislabeled game by pointing it at the right pairing.
 
 create table pairings (
   id            uuid primary key default gen_random_uuid(),
@@ -161,24 +192,33 @@ create table pairings (
   team_id       uuid not null references teams (id),
   slot          smallint not null check (slot between 1 and 3),
   created_at    timestamptz not null default now(),
-  unique (team_match_id, team_id, slot)
+  unique (team_match_id, team_id, slot),
+  -- Target for games' composite FKs (pairing belongs to the game's match and side).
+  unique (id, team_match_id, team_id)
 );
 
--- The two players in a pairing, as the captain set them at the start of the
--- night: one at each end. capacity + home_team_id record how a non-roster
--- player (rover, pool sub, guest) came to be in the pairing.
+-- A pairing's team must be one of its team match's two teams.
+create function public.pairings_check_team()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if not exists (
+    select 1 from public.team_matches m
+    where m.id = new.team_match_id and new.team_id in (m.team_a_id, m.team_b_id)
+  ) then
+    raise exception 'pairing team % is not in team match %', new.team_id, new.team_match_id
+      using errcode = 'foreign_key_violation', constraint = 'pairings_team_in_match';
+  end if;
+  return null;
+end;
+$$;
 
-create table pairing_members (
-  id            uuid primary key default gen_random_uuid(),
-  pairing_id    uuid not null references pairings (id) on delete cascade,
-  player_id     uuid not null references players (id),
-  capacity      participant_capacity not null default 'roster',
-  home_team_id  uuid references teams (id),   -- for rovers: the team they normally play for
-  court_end     court_end not null,
-  created_at    timestamptz not null default now(),
-  unique (pairing_id, player_id),
-  unique (pairing_id, court_end)   -- one member per end => at most 2 per pairing
-);
+-- An AFTER (constraint) trigger, so RLS rejects a client insert before this runs.
+create constraint trigger pairings_team_in_match
+  after insert or update on pairings
+  for each row execute function public.pairings_check_team();
 
 -- ---------- Games ----------------------------------------------------------
 
@@ -187,21 +227,27 @@ create table games (
   -- Device-generated on creation; makes offline creation idempotent so a
   -- retried sync can't produce a duplicate game.
   client_game_id           uuid not null unique,
-  team_match_id            uuid references team_matches (id) on delete cascade, -- NULL for games outside a team match
+  -- The match night and team match. Both NULL for a game outside the league
+  -- schedule; a team-match game always records its night too.
+  night_id                 uuid references match_nights (id) on delete cascade,
+  team_match_id            uuid,
   -- Every stored game uses real team rows. Side 'a' = team_a, side 'b' = team_b.
+  -- In a team match these are the match's team A and team B, in that order.
   team_a_id                uuid not null references teams (id),
   team_b_id                uuid not null references teams (id),
-  -- The captain's intended pairings. Links to intent; NOT the record of who played.
-  pairing_a_id             uuid references pairings (id),
-  pairing_b_id             uuid references pairings (id),
+  -- The 3x3 grid cell: side A's pairing vs side B's pairing. A label only;
+  -- who actually played is in game_participants.
+  pairing_a_id             uuid,
+  pairing_b_id             uuid,
   round                    smallint,
-  court                    smallint,
+  pit                      smallint,
   source                   game_source       not null default 'app',
   detail_level             game_detail_level not null default 'frame',
   status                   entity_status     not null default 'scheduled',
   -- Who holds the game right now. Mutable; history is in game_scorer_handoffs.
   current_scorer_player_id uuid references players (id),
-  -- For paper entry: who typed it in, distinct from who kept score.
+  -- Who created this record: the scorer who started an app game, or who
+  -- typed in a paper sheet (distinct from who kept score on paper).
   entered_by_player_id     uuid references players (id),
   -- Snapshot of the rules this game was played under (endCondition etc.).
   rules                    jsonb not null check (jsonb_typeof(rules) = 'object'),
@@ -211,9 +257,32 @@ create table games (
   final_score_b            integer check (final_score_b >= 0),
   played_at                timestamptz,
   completed_at             timestamptz,
+  -- Admin lock for this one game. An app game also locks when its night's
+  -- locks_at passes (see the access migration).
+  locked_at                timestamptz,
   created_at               timestamptz not null default now(),
   updated_at               timestamptz not null default now(),
   constraint games_teams_differ check (team_a_id <> team_b_id),
+  -- A team-match game records its night (the composite FK below needs both;
+  -- with a NULL night it would silently not be checked).
+  constraint games_team_match_has_night check (team_match_id is null or night_id is not null),
+  -- Pairings and pits only exist inside a team match.
+  constraint games_pairings_need_team_match check (
+    team_match_id is not null or (pairing_a_id is null and pairing_b_id is null)
+  ),
+  constraint games_pit_needs_team_match check (team_match_id is not null or pit is null),
+  -- The game's night and teams are its team match's (side a = match team A).
+  constraint games_team_match_fk
+    foreign key (team_match_id, night_id, team_a_id, team_b_id)
+    references team_matches (id, night_id, team_a_id, team_b_id) on delete cascade,
+  -- Side A's pairing is team A's pairing in this match; same for B.
+  constraint games_pairing_a_fk
+    foreign key (pairing_a_id, team_match_id, team_a_id) references pairings (id, team_match_id, team_id),
+  constraint games_pairing_b_fk
+    foreign key (pairing_b_id, team_match_id, team_b_id) references pairings (id, team_match_id, team_id),
+  -- The pit is one assigned to this team match.
+  constraint games_pit_fk
+    foreign key (team_match_id, pit) references team_match_pits (team_match_id, pit),
   constraint games_final_scores_by_detail_level check (
     case detail_level
       when 'frame' then final_score_a is null and final_score_b is null
@@ -234,6 +303,12 @@ create table games (
 create trigger games_set_updated_at
   before update on games
   for each row execute function public.set_updated_at();
+
+-- Each grid cell (pairing vs pairing) is played once. A voided game frees
+-- its cell for a replay.
+create unique index games_one_per_grid_cell
+  on games (pairing_a_id, pairing_b_id)
+  where status <> 'voided' and pairing_a_id is not null and pairing_b_id is not null;
 
 -- ---------- Scorer handoffs (append-only log) ------------------------------
 -- One row per transfer of the scorekeeping role. Handoff (who RECORDS) is a
@@ -377,8 +452,8 @@ group by g.id;
 create index on team_memberships (team_id);
 create index on team_memberships (player_id);
 create index on team_matches (night_id);
-create index on pairing_members (player_id);
 create index on games (team_match_id);
+create index on games (night_id);
 create index on game_scorer_handoffs (game_id);
 create index on game_participants (player_id);
 create index on frames (thrower_a_participant_id);
@@ -394,8 +469,8 @@ alter table teams                enable row level security;
 alter table team_memberships     enable row level security;
 alter table match_nights         enable row level security;
 alter table team_matches         enable row level security;
+alter table team_match_pits      enable row level security;
 alter table pairings             enable row level security;
-alter table pairing_members      enable row level security;
 alter table games                enable row level security;
 alter table game_scorer_handoffs enable row level security;
 alter table game_participants    enable row level security;
@@ -403,18 +478,12 @@ alter table frames               enable row level security;
 
 -- ============================================================================
 -- STILL TO DO (later migrations, deliberately not built yet):
---   * RLS policies: who can read (likely: league members), who can write a
---     game (its current scorer), who can enter paper results (officers).
---     No policy should grant UPDATE/DELETE on game_scorer_handoffs.
+--   * Roles, RLS policies, locking and the audit log are in the next
+--     migration (*_access_and_audit.sql).
 --   * Stats views (standings, per-player ringer %, leaderboards). These are
 --     SQL over the tables above; the attribution rule for subs is a WHERE/JOIN
 --     decision made once the league settles it. Every stat must filter on
 --     detail_level. The raw data already supports every option.
---   * Guest-merge procedure (fold a guest player into a real one).
---   * Possible further invariants, not yet decided:
---       - a game's team_a/b match its team_match's teams, and pairing_a/b
---         belong to team_a/b;
---       - team_matches.season_id matches its night's season;
---       - a pairing's team is one of its team match's teams;
---       - games.current_scorer_player_id kept in sync with the latest handoff.
+--   * Possible further invariant, not yet decided: a team plays at most one
+--     team match per night.
 -- ============================================================================

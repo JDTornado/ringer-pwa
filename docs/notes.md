@@ -19,6 +19,20 @@ Tags: [db], [build], [deploy], [pwa], [ui], [device].
 
 ## Gotchas
 
+- [build] 2026-11-24: Don't start Docker Desktop from Claude's sandboxed shell.
+  It created `AppData\Local\Docker\run\sailor-ingest.sock` files nobody could
+  open or delete ("The file cannot be accessed by the system"), and every later
+  launch crashed on them. Fix: quit Docker, rename the `run` folder aside, and
+  have Josh start Docker from the Start menu.
+- [db] 2026-11-24: BEFORE triggers run before RLS WITH CHECK, so a BEFORE INSERT
+  trigger that raises its own error masks an RLS denial (the RLS probe test saw
+  23503 instead of 42501). Integrity checks that need a lookup are AFTER
+  constraint triggers.
+- [db] 2026-11-24: To count rows an UPDATE/DELETE changed under RLS in pgTAP, use
+  a top-level CTE: `with u as (update ... returning 1) select is(count(*)::int, 0,
+  '...') from u;`. A data-modifying CTE can't sit inside a subquery, and RLS
+  USING denials change 0 rows instead of raising.
+
 - [db] In `select court_end::text ... order by inning, court_end`, the ORDER BY
   binds to the text-cast output column and sorts north before south. Sort on
   the enum column itself (qualify it, or don't alias over it).

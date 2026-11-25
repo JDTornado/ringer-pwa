@@ -17,9 +17,10 @@ the *implementation* of it. When they disagree, stop and reconcile.
 - A season has **teams** of 8 players.
 - On a **match night**, all teams play at the same venue.
 - A **team match** pairs two teams and contains exactly **9 games**.
-- Each team fields **3 pairings** (6 of its 8 players). Pairings are decided by the
-  captain at the start of the night and are **locked for that night**.
+- Each team fields **3 pairings** (6 of its 8 players). A pairing forms when a pair
+  plays its first game of the night (see Pairings).
 - Each pairing plays each opposing pairing once → 3 × 3 = 9 games.
+- Admins schedule each team match and assign it **pits** for the night.
 - **2 games run concurrently**; the pairing sitting out supplies the scorekeeper.
 - The court has a **north** and a **south** end. Each end holds **2 opponents** —
   one player from each team. (Partners are split across the two ends.) At the start
@@ -83,7 +84,7 @@ Global. Not scoped to a team or a season.
 | Field | Type | Notes |
 |---|---|---|
 | `displayName` | string | |
-| `authUid` | string? | Null for guests who never sign in |
+| `authUid` | string? | Null until the person signs in and claims this player (or for guests who never sign in). One account ↔ one player. See Access and roles |
 | `isGuest` | bool | True for ad-hoc fill-ins created on the spot |
 | `mergedIntoPlayerId` | string? | Set when a guest record is merged into a real one |
 | `createdAt` | timestamp | |
@@ -117,6 +118,7 @@ The 8-person roster lives here, not on the player or the team.
 | `date` | date | |
 | `venue` | string | |
 | `status` | enum | `scheduled` / `inProgress` / `complete` |
+| `locksAt` | timestamp? | When the night's app-scored games lock ("end of night"). Set by an admin; setting it to now locks immediately |
 
 ### Team matches
 
@@ -126,57 +128,52 @@ The 8-person roster lives here, not on the player or the team.
 | `seasonId` | ref | Denormalized for querying |
 | `teamAId`, `teamBId` | ref | |
 | `status` | enum | |
+| `pits` | int[] | The pits this match uses tonight (a separate pit-assignment row each). A pit can't go to two matches on one night |
 
 ### Pairings
-Night-scoped. This is a first-class entity, not a join table.
+Night-scoped label for one row or column of the 3×3 grid. Simplified 2026-11-24:
+a pairing holds no players.
 
 | Field | Type | Notes |
 |---|---|---|
 | `teamMatchId` | ref | |
-| `teamId` | ref | |
+| `teamId` | ref | One of the team match's two teams |
 | `slot` | int | 1, 2, or 3 |
-| `members` | array[2] | See below |
 
-Each member:
-
-| Field | Type | Notes |
-|---|---|---|
-| `playerId` | ref | |
-| `capacity` | enum | `roster` / `rover` / `subPool` / `guest` |
-| `homeTeamId` | ref? | For rovers: the team they normally play for |
-| `end` | enum | `north` / `south`: the end the captain assigned. One member per end, so at most 2 per pairing |
-
-`capacity` is the field that lets you answer the sub-attribution question later,
-whatever the league decides. Omitting it means backfilling every historical game.
-
-**Important:** `members` records the captain's *intent* at the start of the night.
-It is not the record of who actually played a given game — a player may leave
-early and be replaced partway through. Who actually played is snapshotted onto
-each game (see below). Never compute a stat by joining a game to its pairing's
-member list.
+- A pairing **forms when a pair plays its first game** of the night: the app creates
+  it then, instead of a captain entering lineups up front.
+- **Who played is never on the pairing.** It's on each game's participants (with
+  `capacity` and `homeTeamId`), so subs and early leavers need no pairing edits.
+  Never compute a stat by joining a game to its pairing.
+- Each grid cell (pairing A vs pairing B) is played once; a voided game frees the
+  cell for a replay.
+- If a game is filed under the wrong pairing, an **admin** fixes it by pointing the
+  game at the right pairing.
 
 ### Games
 
 | Field | Type | Notes |
 |---|---|---|
 | `clientGameId` | uuid | Generated on device. Makes offline creation idempotent |
+| `nightId` | ref? | The match night. Set whenever `teamMatchId` is |
 | `teamMatchId` | ref? | Null for a game outside a league team match |
-| `teamAId`, `teamBId` | ref | Always real team rows (see note below). "Side A"/"side B" everywhere else means these |
+| `teamAId`, `teamBId` | ref | Always real team rows (see note below). In a team match, the match's team A and B. "Side A"/"side B" everywhere else means these |
 | `round` | int | |
-| `court` | int | |
-| `pairingAId`, `pairingBId` | ref | Links to intent; not the record of who played |
+| `pit` | int? | One of the team match's assigned pits |
+| `pairingAId`, `pairingBId` | ref? | The grid cell. A label; not the record of who played |
 | `participants` | snapshot rows | **Snapshot** of who actually played — each: playerId + `side` (`a`/`b`) + capacity + `homeTeamId` + `end` (`north`/`south`). The team played for is the game's team on that side. A side can have **more than 2** participants when someone leaves early and is replaced; who threw each frame is on the frame |
 | `source` | enum | `app` / `paper` — how the game was recorded |
 | `detailLevel` | enum | `frame` (full frame-by-frame) / `finalOnly` |
 | `currentScorerPlayerId` | ref? | Who holds the game now. Mutable |
 | `scorerHandoffs` | log | Append-only: `{playerId, fromInning, at}` per handoff |
-| `enteredByPlayerId` | ref? | For paper entry: who typed it in, distinct from who scored it |
+| `enteredByPlayerId` | ref? | Who created the record: the scorer who started an app game, or who typed in a paper sheet (distinct from who kept score on paper) |
 | `playedAt` | timestamp | When the game happened, not when it was entered |
 | `status` | enum | `scheduled` / `inProgress` / `complete` / `voided` |
 | `rules` | object (JSON) | Snapshot: end condition (see Scoring rules). No scoring engine needed |
 | `frames` | child rows | The record — one row per end's throw. None for `finalOnly`. See below |
 | `finalScoreA`, `finalScoreB` | int? | **Only** for `finalOnly` games, where they're entered. For `frame` games they're null and the score is derived (a view sums the frames) |
 | `completedAt` | timestamp? | |
+| `lockedAt` | timestamp? | Admin lock for this one game. See Access and roles |
 
 Frames are stored as their own rows keyed to the game (one per end per inning, ~30
 in a full game), not embedded in the game record.
@@ -248,8 +245,8 @@ The PWA has no built-in sync layer, so offline is handled explicitly.
 - The IndexedDB copy is a working draft, not the record. Browsers — Safari
   especially — can evict it. Once synced, the server is the record.
 - Because there is exactly one writer per game, no conflict resolution is needed.
-- Lineups and pairings must be enterable offline too — captains set them at the
-  start of the night, which is exactly when the venue is most congested.
+- Pairings must be creatable offline too — the app creates one when a pair starts
+  its first game, at the start of the night, when the venue is most congested.
 
 ---
 
@@ -422,6 +419,35 @@ Likely additions as more screens arrive (lineup, standings): a `background`, a
 `win`/positive color for the game-over state, and a `warning` color for the
 impossible score+ringer flags. Add them to the same named palette rather than
 introducing one-off hexes.
+
+## Access and roles
+
+Decided 2026-11-24. Enforced by RLS in `supabase/migrations/*_access_and_audit.sql`.
+
+- **Sign-in required.** Nobody reads or writes league data without signing in.
+- **Account ↔ player.** On first sign-in a person picks (claims) their own player
+  row. The link then locks: only an admin can change or clear it. Guests and
+  already-claimed players can't be claimed.
+- **Member** = a signed-in account linked to a player. Members read all league
+  data, add ad-hoc guest players, create pairings, and start and score games.
+  Captains have no extra powers.
+- **Admin** (Josh and a league officer): seasons, teams, rosters, the schedule
+  (match nights, team matches, pits), account links, guest merges, and any edit to
+  a locked game. Admins are listed in an `admins` table managed with SQL.
+- **Owning a game.** An app game belongs to its **current scorer**; a paper game to
+  whoever **entered** it. Only the owner (or an admin) edits the game, its
+  participants and frames, or hands it off. A handoff is the only way the scorer
+  changes, and the first scorer is logged automatically. Nobody but an admin
+  deletes a game; a scorer voids it instead.
+- **Locking.** An app game locks when its night's `locksAt` passes; any game locks
+  when its own `lockedAt` passes (admin). Paper games are entered after the night,
+  so the night lock doesn't apply to them; an admin locks them. After locking, only
+  admins can change the game.
+- **Audit log.** Append-only, admin-readable: every update and delete of game
+  data, every write to a locked game, and every write to league data (players,
+  teams, rosters, schedule, pairings, admins), with who, when, and the row before
+  and after.
+- **Paper entry** is open to any member for now (open question 8 below).
 
 ## Open questions for the league
 

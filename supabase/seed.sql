@@ -1,8 +1,9 @@
 -- ============================================================================
 -- Local seed data. Runs on every `supabase db reset`; NEVER on the hosted DB.
 --
--- One season, one match night, one team match (Silver State Shoes vs
--- Truckee Tossers), all six pairings, and two of the night's games:
+-- One season, one match night (already locked), one team match (Silver State
+-- Shoes vs Truckee Tossers) on pits 1 and 2, and two of the night's games
+-- (so four of the six pairings have formed):
 --   game 1: app-scored, frame-level, complete. Silver State wins 22-17 in
 --           inning 9 (first to 21+).
 --   game 2: paper sheet, final_only, complete. Truckee wins 21-18.
@@ -15,6 +16,13 @@
 --   ...-0001-... players   ...-0002-... season    ...-0003-... teams
 --   ...-0004-... night     ...-0005-... match     ...-0006-... pairings
 --   ...-0007-... games     ...-0008-... game participants
+--   ...-0009-... auth accounts
+--
+-- Local sign-in accounts (password for all: ringer-local; local only):
+--   admin@ringer.test  admin, linked to Alice Moreno
+--   tom@ringer.test    member, linked to Tom Wexler
+--   mae@ringer.test    member, linked to Mae Porter
+--   new@ringer.test    signed up, not yet linked to a player
 -- ============================================================================
 
 -- ---------- Players --------------------------------------------------------
@@ -43,6 +51,36 @@ insert into players (id, display_name, is_guest) values
   -- Ad-hoc guest: name only, no team, no account
   ('00000000-0000-0000-0001-0000000000d1', 'Gus Turner',     true);
 
+-- ---------- Accounts (local only) -----------------------------------------
+
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+  confirmation_token, recovery_token, email_change, email_change_token_new
+)
+select '00000000-0000-0000-0000-000000000000', u.id, 'authenticated', 'authenticated', u.email,
+       extensions.crypt('ringer-local', extensions.gen_salt('bf')), now(),
+       '{"provider": "email", "providers": ["email"]}', '{}', now(), now(), '', '', '', ''
+from (values
+  ('00000000-0000-0000-0009-000000000001'::uuid, 'admin@ringer.test'),
+  ('00000000-0000-0000-0009-000000000002'::uuid, 'tom@ringer.test'),
+  ('00000000-0000-0000-0009-000000000003'::uuid, 'mae@ringer.test'),
+  ('00000000-0000-0000-0009-000000000004'::uuid, 'new@ringer.test')
+) as u(id, email);
+
+insert into auth.identities (provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+select u.id::text, u.id, jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true),
+       'email', now(), now(), now()
+from auth.users u
+where u.email like '%@ringer.test';
+
+update players set auth_user_id = '00000000-0000-0000-0009-000000000001' where id = '00000000-0000-0000-0001-0000000000a1';
+update players set auth_user_id = '00000000-0000-0000-0009-000000000002' where id = '00000000-0000-0000-0001-0000000000a4';
+update players set auth_user_id = '00000000-0000-0000-0009-000000000003' where id = '00000000-0000-0000-0001-0000000000b4';
+
+insert into admins (user_id, note) values
+  ('00000000-0000-0000-0009-000000000001', 'local seed admin');
+
 -- ---------- Season and teams -----------------------------------------------
 
 insert into seasons (id, name, starts_on, ends_on) values
@@ -64,9 +102,10 @@ where not p.is_guest;
 
 -- ---------- Match night and team match -------------------------------------
 
-insert into match_nights (id, season_id, played_on, venue, status) values
+-- locks_at has passed: the night's app games are now admin-only.
+insert into match_nights (id, season_id, played_on, venue, status, locks_at) values
   ('00000000-0000-0000-0004-000000000001', '00000000-0000-0000-0002-000000000001',
-   '2026-10-27', 'Idlewild Park courts', 'in_progress');
+   '2026-10-27', 'Idlewild Park courts', 'complete', '2026-10-28 03:00-07');
 
 insert into team_matches (id, night_id, season_id, team_a_id, team_b_id, status) values
   ('00000000-0000-0000-0005-000000000001', '00000000-0000-0000-0004-000000000001',
@@ -74,59 +113,46 @@ insert into team_matches (id, night_id, season_id, team_a_id, team_b_id, status)
    '00000000-0000-0000-0003-00000000000a', '00000000-0000-0000-0003-00000000000b',
    'in_progress');
 
--- ---------- Pairings (captains' intent for the night) ----------------------
+insert into team_match_pits (night_id, team_match_id, pit) values
+  ('00000000-0000-0000-0004-000000000001', '00000000-0000-0000-0005-000000000001', 1),
+  ('00000000-0000-0000-0004-000000000001', '00000000-0000-0000-0005-000000000001', 2);
+
+-- ---------- Pairings (formed as each pair plays its first game) -----------
 -- Absent tonight: Hank, Joe, Ruth (Silver State); Gina, Walt, Nora (Truckee).
+-- Who played in each is on the games (game_participants), not here.
+--   Silver State 1: Alice + rover Rick     Truckee 1: guest Gus + Bob
+--   Silver State 2: Dan + Priya            Truckee 2: Carla + Ed
+-- Pairing 3 (Tom + Linda, Mae + Sam) sits out round 1 and keeps score.
 
 insert into pairings (id, team_match_id, team_id, slot) values
   ('00000000-0000-0000-0006-0000000000a1', '00000000-0000-0000-0005-000000000001', '00000000-0000-0000-0003-00000000000a', 1),
   ('00000000-0000-0000-0006-0000000000a2', '00000000-0000-0000-0005-000000000001', '00000000-0000-0000-0003-00000000000a', 2),
-  ('00000000-0000-0000-0006-0000000000a3', '00000000-0000-0000-0005-000000000001', '00000000-0000-0000-0003-00000000000a', 3),
   ('00000000-0000-0000-0006-0000000000b1', '00000000-0000-0000-0005-000000000001', '00000000-0000-0000-0003-00000000000b', 1),
-  ('00000000-0000-0000-0006-0000000000b2', '00000000-0000-0000-0005-000000000001', '00000000-0000-0000-0003-00000000000b', 2),
-  ('00000000-0000-0000-0006-0000000000b3', '00000000-0000-0000-0005-000000000001', '00000000-0000-0000-0003-00000000000b', 3);
-
-insert into pairing_members (pairing_id, player_id, capacity, home_team_id, court_end) values
-  -- Silver State 1: Alice + rover Rick (home team Washoe Ringers)
-  ('00000000-0000-0000-0006-0000000000a1', '00000000-0000-0000-0001-0000000000a1', 'roster', null, 'south'),
-  ('00000000-0000-0000-0006-0000000000a1', '00000000-0000-0000-0001-0000000000c1', 'rover',  '00000000-0000-0000-0003-00000000000c', 'north'),
-  -- Silver State 2: Dan + Priya
-  ('00000000-0000-0000-0006-0000000000a2', '00000000-0000-0000-0001-0000000000a2', 'roster', null, 'south'),
-  ('00000000-0000-0000-0006-0000000000a2', '00000000-0000-0000-0001-0000000000a3', 'roster', null, 'north'),
-  -- Silver State 3: Tom + Linda
-  ('00000000-0000-0000-0006-0000000000a3', '00000000-0000-0000-0001-0000000000a4', 'roster', null, 'south'),
-  ('00000000-0000-0000-0006-0000000000a3', '00000000-0000-0000-0001-0000000000a5', 'roster', null, 'north'),
-  -- Truckee 1: guest Gus + Bob
-  ('00000000-0000-0000-0006-0000000000b1', '00000000-0000-0000-0001-0000000000d1', 'guest',  null, 'south'),
-  ('00000000-0000-0000-0006-0000000000b1', '00000000-0000-0000-0001-0000000000b1', 'roster', null, 'north'),
-  -- Truckee 2: Carla + Ed
-  ('00000000-0000-0000-0006-0000000000b2', '00000000-0000-0000-0001-0000000000b2', 'roster', null, 'south'),
-  ('00000000-0000-0000-0006-0000000000b2', '00000000-0000-0000-0001-0000000000b3', 'roster', null, 'north'),
-  -- Truckee 3: Mae + Sam
-  ('00000000-0000-0000-0006-0000000000b3', '00000000-0000-0000-0001-0000000000b4', 'roster', null, 'south'),
-  ('00000000-0000-0000-0006-0000000000b3', '00000000-0000-0000-0001-0000000000b5', 'roster', null, 'north');
+  ('00000000-0000-0000-0006-0000000000b2', '00000000-0000-0000-0005-000000000001', '00000000-0000-0000-0003-00000000000b', 2);
 
 -- ---------- Games ----------------------------------------------------------
 -- Round 1 runs two games at once; pairing 3 of each team sits out and keeps
 -- score.
 
 insert into games (
-  id, client_game_id, team_match_id, team_a_id, team_b_id, pairing_a_id, pairing_b_id,
-  round, court, source, detail_level, status,
+  id, client_game_id, night_id, team_match_id, team_a_id, team_b_id, pairing_a_id, pairing_b_id,
+  round, pit, source, detail_level, status,
   current_scorer_player_id, entered_by_player_id, rules,
   final_score_a, final_score_b, played_at, completed_at
 ) values
-  -- Game 1: app-scored, frame by frame. Tom started scoring; Mae took over at inning 6.
+  -- Game 1: app-scored, frame by frame. Tom started it and scored; Mae took
+  -- over at inning 6 (handoff below).
   ('00000000-0000-0000-0007-000000000001', 'c0000000-0000-4000-8000-000000000001',
-   '00000000-0000-0000-0005-000000000001',
+   '00000000-0000-0000-0004-000000000001', '00000000-0000-0000-0005-000000000001',
    '00000000-0000-0000-0003-00000000000a', '00000000-0000-0000-0003-00000000000b',
    '00000000-0000-0000-0006-0000000000a1', '00000000-0000-0000-0006-0000000000b1',
    1, 1, 'app', 'frame', 'complete',
-   '00000000-0000-0000-0001-0000000000b4', null,
+   '00000000-0000-0000-0001-0000000000a4', '00000000-0000-0000-0001-0000000000a4',
    '{"targetPoints": 21, "shoeLimitInnings": 15, "tieAtLimit": "suddenDeath"}',
    null, null, '2026-10-27 18:30-07', '2026-10-27 19:05-07'),
   -- Game 2: kept on paper by Sam, typed in the next day by Linda. Final only.
   ('00000000-0000-0000-0007-000000000002', 'c0000000-0000-4000-8000-000000000002',
-   '00000000-0000-0000-0005-000000000001',
+   '00000000-0000-0000-0004-000000000001', '00000000-0000-0000-0005-000000000001',
    '00000000-0000-0000-0003-00000000000a', '00000000-0000-0000-0003-00000000000b',
    '00000000-0000-0000-0006-0000000000a2', '00000000-0000-0000-0006-0000000000b2',
    1, 2, 'paper', 'final_only', 'complete',
@@ -134,8 +160,9 @@ insert into games (
    '{"targetPoints": 21, "shoeLimitInnings": 15, "tieAtLimit": "suddenDeath"}',
    18, 21, '2026-10-27 18:30-07', '2026-10-27 19:10-07');
 
+-- Each game's first scorer was logged automatically (from inning 1). This
+-- handoff makes Mae game 1's current scorer.
 insert into game_scorer_handoffs (game_id, player_id, from_inning, handed_off_at) values
-  ('00000000-0000-0000-0007-000000000001', '00000000-0000-0000-0001-0000000000a4', 1, '2026-10-27 18:30-07'),
   ('00000000-0000-0000-0007-000000000001', '00000000-0000-0000-0001-0000000000b4', 6, '2026-10-27 18:48-07');
 
 -- ---------- Who actually played --------------------------------------------
