@@ -213,7 +213,7 @@ select ok(
 -- ---------- updated_at triggers --------------------------------------------
 -- now() is fixed for the whole transaction, so backdate first, then update.
 update games set updated_at = '2000-01-01' where id = '77777777-0000-0000-0000-000000000002';
-update games set court = 3 where id = '77777777-0000-0000-0000-000000000002';
+update games set round = 3 where id = '77777777-0000-0000-0000-000000000002';
 select is((select updated_at from games where id = '77777777-0000-0000-0000-000000000002'), now(),
   'games.updated_at is set on update');
 update frames set updated_at = '2000-01-01' where game_id = '77777777-0000-0000-0000-000000000001' and inning = 1 and court_end = 'south';
