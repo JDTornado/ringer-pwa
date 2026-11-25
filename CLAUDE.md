@@ -3,9 +3,8 @@
 Installable web app for scoring league horseshoe games: game setup → live scoring →
 game over, then (later) league data, stats, and standings on Supabase.
 
-This repo is also a **pilot** for moving our office's mobile apps off FlutterFlow.
-When something is harder than it should be — a workaround, a tool fighting you, an
-iOS/Safari surprise, a deploy snag — add one dated line to `docs/pilot-notes.md`.
+Gotchas and open items live in `docs/notes.md`. Read it before working in an
+area it covers, and add a dated line when something surprises you.
 
 ## How we work
 
